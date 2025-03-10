@@ -1,0 +1,9 @@
+- [] Index Factory contract and dynamically create CreatureBoringToken contracts  
+- [] Update README.md 
+- [] Add hosted service deployment instructions
+- [] GlobalStats entity 
+        - protocolFees
+        - monsters
+- [] Monsters 
+        - experiencePoints
+        - 24 hr queries handling > 1000 entries getWhere()

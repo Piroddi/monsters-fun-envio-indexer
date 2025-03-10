@@ -1,63 +1,31 @@
-type CreatureBoringToken_Approval {
-  id: ID!
-  owner: String!
-  spender: String!
-  value: BigInt!
+type Monster {
+    id: ID! # Token Address
+    supply: BigInt!
+    price: BigInt!
+    marketCap: BigInt!
+    trades: [Trade!]! @derivedFrom(field: "token")
+    # experiencePoints: BigInt! # XP Calculation
+    # marketCapChange: Float! # 24-hour Market Cap Change (%)
+    # volume: BigInt! # 24-hour Volume
 }
 
-type CreatureBoringToken_BattleEnded {
-  id: ID!
-  winner: String!
-  loser: String!
-  transferredValue: BigInt!
+type Trade {
+    id: ID! # txHash-logIndex
+    txHash: String! 
+    logIndex: Int!
+    token: String! 
+    trader: String! @index
+    isBuy: Boolean!
+    amount: BigInt! @index
+    ethAmount: BigInt! @index
+    blockTimestamp: BigInt! @index # Timestamp for 24-hour Data Queries
 }
 
-type CreatureBoringToken_BattleStarted {
-  id: ID!
-  opponent: String!
+type Trader {
+    id: ID! # Account Address
+    trades: [Trade!]! @derivedFrom(field: "trader")
+    numberOfTrades: Int!
+    # quantity: BigInt!
+    # holdings: [Monsters!]! # Many-to-Many Relationship
+    # lifetimePnL: Float! # Lifetime Profit/Loss from Trades
 }
-
-type CreatureBoringToken_OwnershipTransferred {
-  id: ID!
-  previousOwner: String!
-  newOwner: String!
-}
-
-type CreatureBoringToken_Paused {
-  id: ID!
-  account: String!
-}
-
-type CreatureBoringToken_TokensMigrated {
-  id: ID!
-  account: String!
-  amount: BigInt!
-}
-
-type CreatureBoringToken_Trade {
-  id: ID!
-  trader: String!
-  isBuy: Boolean!
-  amount: BigInt!
-  ethAmount: BigInt!
-  protocolFee: BigInt!
-}
-
-type CreatureBoringToken_Transfer {
-  id: ID!
-  from: String!
-  to: String!
-  value: BigInt!
-}
-
-type CreatureBoringToken_Unpaused {
-  id: ID!
-  account: String!
-}
-
-type CreatureBoringToken_WhitelistPurchase {
-  id: ID!
-  buyer: String!
-  amount: BigInt!
-}
-
