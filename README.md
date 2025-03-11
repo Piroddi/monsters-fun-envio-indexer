@@ -18,7 +18,7 @@ pnpm envio dev
 
 Visit http://localhost:8080 to see the GraphQL Playground, local password is `testing`.
 
-## Get Trade
+### Get Trade
 
 ```graphql
 query MyQuery {
@@ -31,6 +31,33 @@ query MyQuery {
 	trader
   }
 }
+```
 
+### Monster information
 
+```graphql
+query MyQuery {
+  Monster {
+    id
+    marketCap
+    price
+    supply
+    experiencePoints
+  }
+}
+```
 
+### Traders holdings
+
+```graphql
+query MyQuery {
+  Trader {
+    id
+    numberOfTrades
+    holdings {
+      balance      
+      monster
+    }
+  }
+}
+```

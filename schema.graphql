@@ -1,10 +1,12 @@
 type Monster {
     id: ID! # Token Address
     supply: BigInt!
-    price: BigInt!
-    marketCap: BigInt!
+    price: BigDecimal!
+    marketCap: BigDecimal!
     trades: [Trade!]! @derivedFrom(field: "token")
-    # experiencePoints: BigInt! # XP Calculation
+    depositsTotal: BigInt! # total ethAmount of all trades where isBuy
+    withdrawalsTotal: BigInt! # total ethAmount of all trades where !isBuy
+    experiencePoints: BigDecimal! 
     # marketCapChange: Float! # 24-hour Market Cap Change (%)
     # volume: BigInt! # 24-hour Volume
 }
@@ -19,13 +21,22 @@ type Trade {
     amount: BigInt! @index
     ethAmount: BigInt! @index
     blockTimestamp: BigInt! @index # Timestamp for 24-hour Data Queries
+    blockNumber: BigInt! 
 }
 
 type Trader {
     id: ID! # Account Address
     trades: [Trade!]! @derivedFrom(field: "trader")
     numberOfTrades: Int!
+    holdings: [Holdings!]! @derivedFrom(field: "trader")
     # quantity: BigInt!
     # holdings: [Monsters!]! # Many-to-Many Relationship
     # lifetimePnL: Float! # Lifetime Profit/Loss from Trades
+}
+
+type Holdings {
+    id: ID! # monster-trader
+    monster: String! @index
+    trader: String! @index
+    balance: BigInt!
 }
