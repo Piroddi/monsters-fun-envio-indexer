@@ -2,23 +2,24 @@
 name: monsters.fun
 networks:
 - id: 84532
-  start_block: 0
+  start_block: 22798903
+  # end_block: 22798918
   contracts:
   - name: CreatureBoringToken
     address:
     - 0xEcE0d869b88fb1Daf726609990C8244d2b9A400D 
     handler: src/EventHandlers.ts
     events:
-    - event: Approval(address indexed owner, address indexed spender, uint256 value)
-    - event: BattleEnded(address indexed winner, address indexed loser, uint256 transferredValue)
-    - event: BattleStarted(address indexed opponent)
-    - event: OwnershipTransferred(address indexed previousOwner, address indexed newOwner)
-    - event: Paused(address account)
-    - event: TokensMigrated(address indexed account, uint256 amount)
+    # - event: Approval(address indexed owner, address indexed spender, uint256 value)
+    # - event: BattleEnded(address indexed winner, address indexed loser, uint256 transferredValue)
+    # - event: BattleStarted(address indexed opponent)
+    # - event: OwnershipTransferred(address indexed previousOwner, address indexed newOwner)
+    # - event: Paused(address account)
+    # - event: TokensMigrated(address indexed account, uint256 amount)
     - event: Trade(address indexed trader, bool isBuy, uint256 amount, uint256 ethAmount, uint256 protocolFee)
       field_selection:  
         transaction_fields: 
         - "hash"         
     - event: Transfer(address indexed from, address indexed to, uint256 value)
-    - event: Unpaused(address account)
-    - event: WhitelistPurchase(address indexed buyer, uint256 amount)
+    # - event: Unpaused(address account)
+    # - event: WhitelistPurchase(address indexed buyer, uint256 amount)
