@@ -5,7 +5,13 @@
 ## Run
 
 ```bash
-pnpm envio dev
+pnpm dev
+```
+
+## Generate files from `config.yaml` or `schema.graphql`
+
+```bash
+pnpm codegen
 ```
 
 ## Pre-requisites
@@ -23,7 +29,7 @@ Visit http://localhost:8080 to see the GraphQL Playground, local password is `te
 ```graphql
 query MyQuery {
   Trade {
-    isBuy
+    tradeType
     amount
     ethAmount
     id
@@ -57,6 +63,31 @@ query MyQuery {
     holdings {
       balance      
       monster
+    }
+  }
+}
+```
+
+### Traders points
+
+```graphql
+query MyQuery {
+  Trader {    
+    points
+  }
+}
+```
+
+### Traders trades
+
+```graphql
+query MyQuery {
+  Trader {
+    id    
+    trades {
+      tradeType
+      amount
+      token
     }
   }
 }
@@ -137,19 +168,25 @@ query MyQuery {
 
 ```graphql
 query MyQuery {
-  Trader {
+  Monster {
     id
-    holdingsSnapshots(
-      where: { timestamp: { _lte: "$timestampOf24HoursAgo" } }
-      limit: 7 
-      order_by: { timestamp: desc }
-      distinct_on: monster
-    ) {
+  }
+}
+```
+
+```graphql
+query MyQuery {
+  Trader(where: {id: {_eq: "0x8c0686723804A0B7201151852C94Bd17DD043C21"}}) {
+    id
+    holdingsSnapshots(where: {timestamp: {_lte: 1741371238}, _and: {monster_id: {_eq: "0xEcE0d869b88fb1Daf726609990C8244d2b9A400D"}}}, limit: 1, order_by: {timestamp: desc}) {
       marketCap
-      monster
+      monster {
+        id
+      }
     }
   }
 }
+
 ```
 
 Where 7 is the number of monsters
