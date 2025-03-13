@@ -11,6 +11,15 @@ type Monster {
     # volume: BigInt! # 24-hour Volume
 }
 
+type MarketCapSnapshot {
+    id: ID! # txHash-logIndex
+    monster: String! @index
+    timestamp: BigInt! @index
+    supply: BigInt!
+    price: BigDecimal!
+    marketCap: BigDecimal! 
+}
+
 type Trade {
     id: ID! # txHash-logIndex
     txHash: String! 

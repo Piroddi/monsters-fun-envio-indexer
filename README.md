@@ -61,3 +61,27 @@ query MyQuery {
   }
 }
 ```
+
+### 24 hour market cap change queries
+
+#### Current market cap
+```graphql
+query MyQuery {
+  Monster(where: {id: {_eq: "0xEcE0d869b88fb1Daf726609990C8244d2b9A400D"}}) {
+    id
+    marketCap
+  }
+}
+
+```
+
+#### 24 hours ago market cap
+```graphql
+query MyQuery {
+  MarketCapSnapshot(where: {monster: {_eq: "0xEcE0d869b88fb1Daf726609990C8244d2b9A400D"}, _and: {timestamp: {_lte: "$timestampOf24HoursAgo"}}}, limit: 1, order_by: {timestamp: desc}) {
+    marketCap
+    timestamp
+  }
+}
+
+```
