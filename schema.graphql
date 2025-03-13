@@ -3,6 +3,9 @@ type Monster {
     supply: BigInt!
     price: BigDecimal!
     marketCap: BigDecimal!
+    marketCapSnapshots: [MarketCapSnapshot!]! @derivedFrom(field: "monster")
+    totalVolumeTraded: BigInt! # total ethAmount of all buy / sells / trades
+    totalVolumeTradedSnapshots: [TotalVolumeTradedSnapshot!]! @derivedFrom(field: "monster")
     trades: [Trade!]! @derivedFrom(field: "token")
     depositsTotal: BigInt! # total ethAmount of all trades where isBuy
     withdrawalsTotal: BigInt! # total ethAmount of all trades where !isBuy
@@ -18,6 +21,13 @@ type MarketCapSnapshot {
     supply: BigInt!
     price: BigDecimal!
     marketCap: BigDecimal! 
+}
+
+type TotalVolumeTradedSnapshot {
+    id: ID! # txHash-logIndex
+    monster: String! @index
+    timestamp: BigInt! @index    
+    totalVolumeTraded: BigInt! 
 }
 
 type Trade {

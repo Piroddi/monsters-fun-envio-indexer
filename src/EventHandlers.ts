@@ -5,7 +5,8 @@ import {
   Trade,
   Trader,
   Holdings,
-  MarketCapSnapshot
+  MarketCapSnapshot,
+  TotalVolumeTradedSnapshot
 } from "generated";
 
 const calculateExperiencePoints = (depositsTotal: bigint, withdrawalsTotal: bigint): BigDecimal => {
@@ -38,6 +39,7 @@ CreatureBoringToken.Trade.handler(async ({ event, context }) => {
       supply: amount,
       price: price,
       marketCap: price.multipliedBy(amount.toString()),
+      totalVolumeTraded: ethAmount,
       depositsTotal: depositsTotal,
       withdrawalsTotal: withdrawalsTotal,      
       experiencePoints: experiencePoints
@@ -53,11 +55,14 @@ CreatureBoringToken.Trade.handler(async ({ event, context }) => {
       supply: supply,
       price: price,
       marketCap: price.multipliedBy(supply.toString()),
+      totalVolumeTraded: monster.totalVolumeTraded + ethAmount,
       depositsTotal: depositsTotal,
       withdrawalsTotal: withdrawalsTotal,
       experiencePoints: experiencePoints, 
     }
   }
+
+  context.Monster.set(monster);
   
   const trade: Trade = {
     id: hash + "-" + logIndex,
@@ -72,6 +77,8 @@ CreatureBoringToken.Trade.handler(async ({ event, context }) => {
     blockNumber: BigInt(number),
   }
 
+  context.Trade.set(trade);
+
   let traderEntity: Trader | undefined = await context.Trader.get(trader);
   if (!traderEntity) {
     traderEntity = {
@@ -85,6 +92,8 @@ CreatureBoringToken.Trade.handler(async ({ event, context }) => {
     }
   }
 
+  context.Trader.set(traderEntity);
+
   const marketCapSnapshot: MarketCapSnapshot = {
     id: hash + "-" + logIndex,
     monster: srcAddress,
@@ -94,10 +103,16 @@ CreatureBoringToken.Trade.handler(async ({ event, context }) => {
     marketCap: monster.marketCap,
   }
 
-  context.Monster.set(monster);
-  context.Trade.set(trade);
-  context.Trader.set(traderEntity);
   context.MarketCapSnapshot.set(marketCapSnapshot);
+
+  const totalVolumeTradedSnapshot: TotalVolumeTradedSnapshot = {
+    id: hash + "-" + logIndex,
+    monster: srcAddress,
+    timestamp: BigInt(timestamp),
+    totalVolumeTraded: monster.totalVolumeTraded,
+  }
+
+  context.TotalVolumeTradedSnapshot.set(totalVolumeTradedSnapshot);  
 });
 
 CreatureBoringToken.Transfer.handler(async ({ event, context }) => {
@@ -140,5 +155,19 @@ CreatureBoringToken.Transfer.handler(async ({ event, context }) => {
   }
 
   context.Holdings.set(holdingTo);  
+
+  let monster = await context.Monster.get(event.srcAddress);
+  if (!monster) {
+    context.log.error("Transfering a non existent token") // this will show with current monster creation logic
+  } else {
+
+    const transferVolume = new BigDecimal(value.toString()).multipliedBy(monster.price)    
+    const transferVolumeBn = BigInt(transferVolume.integerValue().toString()) 
+
+    monster = {
+      ...monster,
+      totalVolumeTraded: monster.totalVolumeTraded + transferVolumeBn,
+    }
+  }
 
 })
