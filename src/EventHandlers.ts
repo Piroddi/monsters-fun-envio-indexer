@@ -8,7 +8,7 @@ import {
   TotalVolumeTradedSnapshot,  
 } from "generated";
 
-import { createOrUpdateHoldings } from "./helpers/holdings";
+import { createOrUpdateHoldings } from "./helpers/Holdings";
 
 import { WIN_POINTS_MULTIPLIER, TRADE_POINTS_MULTIPLIER } from "./constants";
 
