@@ -11,7 +11,7 @@ networks:
     handler: src/EventHandlers.ts
     events:
     # - event: Approval(address indexed owner, address indexed spender, uint256 value)
-    # - event: BattleEnded(address indexed winner, address indexed loser, uint256 transferredValue)
+    - event: BattleEnded(address indexed winner, address indexed loser, uint256 transferredValue)
     # - event: BattleStarted(address indexed opponent)
     # - event: OwnershipTransferred(address indexed previousOwner, address indexed newOwner)
     # - event: Paused(address account)
@@ -21,5 +21,8 @@ networks:
         transaction_fields: 
         - "hash"         
     - event: Transfer(address indexed from, address indexed to, uint256 value)
+      field_selection:  
+        transaction_fields: 
+        - "hash"         
     # - event: Unpaused(address account)
     # - event: WhitelistPurchase(address indexed buyer, uint256 amount)

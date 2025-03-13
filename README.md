@@ -104,3 +104,52 @@ query MyQuery {
     totalVolumeTraded    
   }
 }
+```
+
+### Monster win / lose ratio
+
+#### Current win / lose ratio
+```graphql
+query MyQuery {
+  Monster(where: {id: {_eq: "0xEcE0d869b88fb1Daf726609990C8244d2b9A400D"}}) {
+    id
+    winLoseRatio
+  }
+}
+```
+
+### Traders current holdings
+
+- Current market cap: For each monster sum the marketCap
+
+```graphql
+query MyQuery {
+  Trader {
+    id
+    holdings {
+      marketCap
+    }
+  }
+}
+```
+
+- 24 Hours ago market cap: For each monster sum the marketCap
+
+```graphql
+query MyQuery {
+  Trader {
+    id
+    holdingsSnapshots(
+      where: { timestamp: { _lte: "$timestampOf24HoursAgo" } }
+      limit: 7 
+      order_by: { timestamp: desc }
+      distinct_on: monster
+    ) {
+      marketCap
+      monster
+    }
+  }
+}
+```
+
+Where 7 is the number of monsters

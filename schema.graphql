@@ -10,8 +10,11 @@ type Monster {
     depositsTotal: BigInt! # total ethAmount of all trades where isBuy
     withdrawalsTotal: BigInt! # total ethAmount of all trades where !isBuy
     experiencePoints: BigDecimal! 
-    # marketCapChange: Float! # 24-hour Market Cap Change (%)
-    # volume: BigInt! # 24-hour Volume
+    battleOutcomes: [BattleOutome!]! @derivedFrom(field: "monster")
+    totalWinsCount: Int! # total wins
+    totalLossesCount: Int! # total losses
+    winLoseRatio: Float! # wins / (wins + losses)    
+    holdings: [CurrentHoldings!]! @derivedFrom(field: "monster")
 }
 
 type MarketCapSnapshot {
@@ -30,6 +33,13 @@ type TotalVolumeTradedSnapshot {
     totalVolumeTraded: BigInt! 
 }
 
+type BattleOutome {
+    id: ID! # txHash-logIndex
+    monster: String! @index
+    win: Boolean! 
+    timestamp: BigInt! @index
+}
+
 type Trade {
     id: ID! # txHash-logIndex
     txHash: String! 
@@ -39,7 +49,7 @@ type Trade {
     isBuy: Boolean!
     amount: BigInt! @index
     ethAmount: BigInt! @index
-    blockTimestamp: BigInt! @index # Timestamp for 24-hour Data Queries
+    blockTimestamp: BigInt! @index # Timestamp for 24-hour Data Queries # todo: make this an Int
     blockNumber: BigInt! 
 }
 
@@ -47,15 +57,27 @@ type Trader {
     id: ID! # Account Address
     trades: [Trade!]! @derivedFrom(field: "trader")
     numberOfTrades: Int!
-    holdings: [Holdings!]! @derivedFrom(field: "trader")
-    # quantity: BigInt!
-    # holdings: [Monsters!]! # Many-to-Many Relationship
+    holdings: [CurrentHoldings!]! @derivedFrom(field: "trader")        
+    holdingsSnapshots: [HoldingsSnapshot!]! @derivedFrom(field: "trader")
     # lifetimePnL: Float! # Lifetime Profit/Loss from Trades
 }
 
-type Holdings {
+type CurrentHoldings {
     id: ID! # monster-trader
-    monster: String! @index
+    monster: Monster! @index
     trader: String! @index
     balance: BigInt!
+    price: BigDecimal!
+    marketCap: BigDecimal!
+    averageHoldingsCost: BigDecimal!
+}
+
+type HoldingsSnapshot {
+    id: ID! # txHash-logIndex
+    monster: Monster! @index
+    price: BigDecimal!
+    trader: String! @index
+    balance: BigInt!
+    marketCap: BigDecimal!
+    timestamp: Int! @index
 }
