@@ -104,3 +104,16 @@ query MyQuery {
     totalVolumeTraded    
   }
 }
+```
+
+### Monster win / lose ratio
+
+#### Current win / lose ratio
+```graphql
+query MyQuery {
+  Monster(where: {id: {_eq: "0xEcE0d869b88fb1Daf726609990C8244d2b9A400D"}}) {
+    id
+    winLoseRatio
+  }
+}
+```

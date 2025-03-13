@@ -11,7 +11,7 @@ networks:
     handler: src/EventHandlers.ts
     events:
     # - event: Approval(address indexed owner, address indexed spender, uint256 value)
-    # - event: BattleEnded(address indexed winner, address indexed loser, uint256 transferredValue)
+    - event: BattleEnded(address indexed winner, address indexed loser, uint256 transferredValue)
     # - event: BattleStarted(address indexed opponent)
     # - event: OwnershipTransferred(address indexed previousOwner, address indexed newOwner)
     # - event: Paused(address account)

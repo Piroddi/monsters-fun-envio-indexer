@@ -42,7 +42,10 @@ CreatureBoringToken.Trade.handler(async ({ event, context }) => {
       totalVolumeTraded: ethAmount,
       depositsTotal: depositsTotal,
       withdrawalsTotal: withdrawalsTotal,      
-      experiencePoints: experiencePoints
+      experiencePoints: experiencePoints,    
+      totalWinsCount: 0,
+      totalLossesCount: 0,
+      winLoseRatio: 0,
     }
   } else {
     const supply = isBuy ? monster.supply + amount : monster.supply - amount;
@@ -168,6 +171,28 @@ CreatureBoringToken.Transfer.handler(async ({ event, context }) => {
       ...monster,
       totalVolumeTraded: monster.totalVolumeTraded + transferVolumeBn,
     }
+  }
+})
+
+CreatureBoringToken.BattleEnded.handler(async ({ event, context }) => {
+  const { winner, loser, transferredValue } = event.params;
+
+  let monster = await context.Monster.get(event.srcAddress);
+  if (!monster) {
+    context.log.error("Battle ended a non existent token") 
+  } else {
+    const isWin = winner == event.srcAddress;
+    const newTotalWinsCount = monster.totalWinsCount + (isWin ? 1 : 0);
+    const newTotalLossesCount = monster.totalLossesCount + (!isWin ? 1 : 0);
+    const newWinLoseRatio = newTotalWinsCount / (newTotalWinsCount + newTotalLossesCount);
+
+    monster = {
+      ...monster,
+      totalWinsCount: newTotalWinsCount,
+      totalLossesCount: newTotalLossesCount,
+      winLoseRatio: newWinLoseRatio,
+    }    
+    context.Monster.set(monster);
   }
 
 })
