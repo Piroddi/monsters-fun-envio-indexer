@@ -117,3 +117,39 @@ query MyQuery {
   }
 }
 ```
+
+### Traders current holdings
+
+- Current market cap: For each monster sum the marketCap
+
+```graphql
+query MyQuery {
+  Trader {
+    id
+    holdings {
+      marketCap
+    }
+  }
+}
+```
+
+- 24 Hours ago market cap: For each monster sum the marketCap
+
+```graphql
+query MyQuery {
+  Trader {
+    id
+    holdingsSnapshots(
+      where: { timestamp: { _lte: "$timestampOf24HoursAgo" } }
+      limit: 7 
+      order_by: { timestamp: desc }
+      distinct_on: monster
+    ) {
+      marketCap
+      monster
+    }
+  }
+}
+```
+
+Where 7 is the number of monsters

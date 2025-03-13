@@ -3,11 +3,12 @@ import {
   CreatureBoringToken,
   Monster,
   Trade,
-  Trader,
-  Holdings,
+  Trader,  
   MarketCapSnapshot,
-  TotalVolumeTradedSnapshot
+  TotalVolumeTradedSnapshot,  
 } from "generated";
+
+import { createOrUpdateHoldings } from "./helpers/Holdings";
 
 const calculateExperiencePoints = (depositsTotal: bigint, withdrawalsTotal: bigint): BigDecimal => {
   const netFlow: number = parseFloat((depositsTotal - withdrawalsTotal).toString());   
@@ -115,53 +116,25 @@ CreatureBoringToken.Trade.handler(async ({ event, context }) => {
     totalVolumeTraded: monster.totalVolumeTraded,
   }
 
-  context.TotalVolumeTradedSnapshot.set(totalVolumeTradedSnapshot);  
+  context.TotalVolumeTradedSnapshot.set(totalVolumeTradedSnapshot);    
+
+  // update the current holding for the trader
+  await createOrUpdateHoldings(context, monster, trader, isBuy ? amount : -amount, monster.price, hash, logIndex, srcAddress, timestamp);
+  
 });
+
 
 CreatureBoringToken.Transfer.handler(async ({ event, context }) => {
   const { from, to, value } = event.params;  
-
-  let holdingFrom: Holdings | undefined = await context.Holdings.get(event.srcAddress + "-" +  from);
-  
-  if (!holdingFrom) {
-    // this can only be the zero address
-    holdingFrom = {
-      id: event.srcAddress + "-" + from,
-      monster: event.srcAddress,
-      trader: from,
-      balance: 0n - value, 
-    }
-  } else {
-    holdingFrom = {
-      ...holdingFrom,
-      balance: holdingFrom.balance - value,
-    }
-  }
-
-  context.Holdings.set(holdingFrom);
-
-  let holdingTo: Holdings | undefined = await context.Holdings.get(event.srcAddress + "-" + to);
-
-  if (!holdingTo) {
-    holdingTo = {
-      id: event.srcAddress + "-" + to,
-      monster: event.srcAddress,
-      trader: to,
-      balance: value,
-    }
-  }
-  else {
-    holdingTo = {
-      ...holdingTo,
-      balance: holdingTo.balance + value,
-    }
-  }
-
-  context.Holdings.set(holdingTo);  
+  const { hash } = event.transaction
+  const { logIndex, srcAddress } = event
+  const { timestamp } = event.block
 
   let monster = await context.Monster.get(event.srcAddress);
+
   if (!monster) {
-    context.log.error("Transfering a non existent token") // this will show with current monster creation logic
+    context.log.error("Transfering a non existent token") // this will show with current monster creation logic - needs the factory deployment version
+    return;
   } else {
 
     const transferVolume = new BigDecimal(value.toString()).multipliedBy(monster.price)    
@@ -171,7 +144,17 @@ CreatureBoringToken.Transfer.handler(async ({ event, context }) => {
       ...monster,
       totalVolumeTraded: monster.totalVolumeTraded + transferVolumeBn,
     }
+    context.Monster.set(monster);
   }
+
+  // update the current holding for the from address 
+  await createOrUpdateHoldings(context, monster, from, 0n - value, monster.price, hash, logIndex, srcAddress, timestamp);
+
+  // update the current holding for the to address
+  await createOrUpdateHoldings(context, monster, to, value, monster.price, hash, logIndex, srcAddress, timestamp);
+
+
+
 })
 
 CreatureBoringToken.BattleEnded.handler(async ({ event, context }) => {
@@ -179,7 +162,7 @@ CreatureBoringToken.BattleEnded.handler(async ({ event, context }) => {
 
   let monster = await context.Monster.get(event.srcAddress);
   if (!monster) {
-    context.log.error("Battle ended a non existent token") 
+    context.log.error("Battle ended on a non existent token") 
   } else {
     const isWin = winner == event.srcAddress;
     const newTotalWinsCount = monster.totalWinsCount + (isWin ? 1 : 0);

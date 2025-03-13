@@ -21,5 +21,8 @@ networks:
         transaction_fields: 
         - "hash"         
     - event: Transfer(address indexed from, address indexed to, uint256 value)
+      field_selection:  
+        transaction_fields: 
+        - "hash"         
     # - event: Unpaused(address account)
     # - event: WhitelistPurchase(address indexed buyer, uint256 amount)
