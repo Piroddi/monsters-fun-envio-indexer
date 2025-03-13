@@ -24,11 +24,11 @@ Visit http://localhost:8080 to see the GraphQL Playground, local password is `te
 query MyQuery {
   Trade {
     isBuy
-	amount
-	ethAmount
-	id
-	token
-	trader
+    amount
+    ethAmount
+    id
+    token
+    trader
   }
 }
 ```
@@ -79,9 +79,28 @@ query MyQuery {
 ```graphql
 query MyQuery {
   MarketCapSnapshot(where: {monster: {_eq: "0xEcE0d869b88fb1Daf726609990C8244d2b9A400D"}, _and: {timestamp: {_lte: "$timestampOf24HoursAgo"}}}, limit: 1, order_by: {timestamp: desc}) {
-    marketCap
-    timestamp
+    marketCap    
   }
 }
 
 ```
+
+### 24 hour total volume traded queries
+
+#### Current total volume traded
+```graphql
+query MyQuery {
+  Monster(where: {id: {_eq: "0xEcE0d869b88fb1Daf726609990C8244d2b9A400D"}}) {
+    id
+    totalVolumeTraded
+  }
+}
+```
+
+#### 24 hours ago total volume traded
+```graphql
+query MyQuery {
+  TotalVolumeTradedSnapshot(where: {monster: {_eq: "0xEcE0d869b88fb1Daf726609990C8244d2b9A400D"}, _and: {timestamp: {_lte: "$timestampOf24HoursAgo"}}}, limit: 1, order_by: {timestamp: desc}) {
+    totalVolumeTraded    
+  }
+}
