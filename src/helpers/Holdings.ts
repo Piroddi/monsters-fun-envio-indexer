@@ -1,7 +1,9 @@
 import { handlerContext, CurrentHoldings, Monster, BigDecimal } from "generated";
 
 export const createOrUpdateHoldings = async (context: handlerContext, monster: Monster, trader: string, balance: bigint, price: BigDecimal, hash: string, logIndex: number, srcAddress: string, blockTimestamp: number) => {
+
   let holding: CurrentHoldings | undefined = await context.CurrentHoldings.get(monster.id + "-" + trader);
+  
   if (!holding) {
     holding = {
       id: monster.id + "-" + trader,
@@ -20,6 +22,7 @@ export const createOrUpdateHoldings = async (context: handlerContext, monster: M
        // averageHoldingsCost : todo
     }
   }
+  
   context.CurrentHoldings.set(holding);
 
   const holdingsSnapshot = {
@@ -31,6 +34,7 @@ export const createOrUpdateHoldings = async (context: handlerContext, monster: M
     marketCap: new BigDecimal((holding.balance).toString()).multipliedBy(monster.price),
     timestamp: blockTimestamp,
   }
+
   context.HoldingsSnapshot.set(holdingsSnapshot);
   
 }

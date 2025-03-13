@@ -6,7 +6,7 @@ type Monster {
     marketCapSnapshots: [MarketCapSnapshot!]! @derivedFrom(field: "monster")
     totalVolumeTraded: BigInt! # total ethAmount of all buy / sells / trades
     totalVolumeTradedSnapshots: [TotalVolumeTradedSnapshot!]! @derivedFrom(field: "monster")
-    trades: [Trade!]! @derivedFrom(field: "token")
+    trades: [Trade!]! @derivedFrom(field: "monster")
     depositsTotal: BigInt! # total ethAmount of all trades where isBuy
     withdrawalsTotal: BigInt! # total ethAmount of all trades where !isBuy
     experiencePoints: BigDecimal! 
@@ -40,13 +40,20 @@ type BattleOutome {
     timestamp: BigInt! @index
 }
 
+enum TradeType {
+    BUY
+    SELL
+    TRANSFER_IN
+    TRANSFER_OUT
+}
+
 type Trade {
     id: ID! # txHash-logIndex
     txHash: String! 
     logIndex: Int!
-    token: String! 
+    monster: String! 
     trader: String! @index
-    isBuy: Boolean!
+    tradeType: TradeType!
     amount: BigInt! @index
     ethAmount: BigInt! @index
     blockTimestamp: BigInt! @index # Timestamp for 24-hour Data Queries # todo: make this an Int
@@ -59,6 +66,7 @@ type Trader {
     numberOfTrades: Int!
     holdings: [CurrentHoldings!]! @derivedFrom(field: "trader")        
     holdingsSnapshots: [HoldingsSnapshot!]! @derivedFrom(field: "trader")
+    points: BigInt! # in 10^18
     # lifetimePnL: Float! # Lifetime Profit/Loss from Trades
 }
 
