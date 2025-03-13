@@ -4,7 +4,8 @@ import {
   Monster,
   Trade,
   Trader,
-  Holdings
+  Holdings,
+  MarketCapSnapshot
 } from "generated";
 
 const calculateExperiencePoints = (depositsTotal: bigint, withdrawalsTotal: bigint): BigDecimal => {
@@ -84,9 +85,19 @@ CreatureBoringToken.Trade.handler(async ({ event, context }) => {
     }
   }
 
-  context.Trader.set(traderEntity);
-  context.Trade.set(trade);
+  const marketCapSnapshot: MarketCapSnapshot = {
+    id: hash + "-" + logIndex,
+    monster: srcAddress,
+    timestamp: BigInt(timestamp),
+    supply: monster.supply,
+    price: monster.price,
+    marketCap: monster.marketCap,
+  }
+
   context.Monster.set(monster);
+  context.Trade.set(trade);
+  context.Trader.set(traderEntity);
+  context.MarketCapSnapshot.set(marketCapSnapshot);
 });
 
 CreatureBoringToken.Transfer.handler(async ({ event, context }) => {
