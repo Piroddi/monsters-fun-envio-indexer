@@ -20,6 +20,28 @@ CreatureBoringFactory.ERC20Initialized.contractRegister(({event, context}) => {
   preRegisterDynamicContracts: true
 });
 
+CreatureBoringFactory.ERC20Initialized.handler(async ({event, context}) =>{
+  const { tokenAddress, name, symbol, initialSupply } = event.params;
+
+  const monster = {
+    id: tokenAddress,
+    name: name,
+    symbol: symbol,
+    supply: initialSupply,
+    price: new BigDecimal(0),
+    marketCap: new BigDecimal(0),
+    totalVolumeTraded: 0n,
+    depositsTotal: 0n,
+    withdrawalsTotal: 0n,      
+    experiencePoints: new BigDecimal(0),    
+    totalWinsCount: 0,
+    totalLossesCount: 0,
+    winLoseRatio: 0,
+  }
+
+  context.Monster.set(monster);
+})
+
 const calculateExperiencePoints = (depositsTotal: bigint, withdrawalsTotal: bigint): BigDecimal => {
   const netFlow: number = parseFloat((depositsTotal - withdrawalsTotal).toString());   
   const exponent = 1/4; // hardcoded 1/4
@@ -41,25 +63,10 @@ CreatureBoringToken.Trade.handler(async ({ event, context }) => {
   let monster: Monster | undefined = await context.Monster.get(srcAddress);
 
   if (!monster) {    
-    const depositsTotal = isBuy ? ethAmount : 0n; 
-    const withdrawalsTotal = isBuy ? 0n : ethAmount;
-    const experiencePoints = calculateExperiencePoints(depositsTotal, withdrawalsTotal);
-
-    monster = {
-      id: srcAddress,
-      supply: amount,
-      price: price,
-      marketCap: price.multipliedBy(amount.toString()),
-      totalVolumeTraded: ethAmount,
-      depositsTotal: depositsTotal,
-      withdrawalsTotal: withdrawalsTotal,      
-      experiencePoints: experiencePoints,    
-      totalWinsCount: 0,
-      totalLossesCount: 0,
-      winLoseRatio: 0,
-    }
+    context.log.error("Trade event emitted for a non existent monster")
+    return;
   } else {
-    const supply = isBuy ? monster.supply + amount : monster.supply - amount;
+    const supply = isBuy ? monster.supply + amount : monster.supply - amount; // todo: validate this isn't double counting
     const depositsTotal = isBuy ? monster.depositsTotal + ethAmount : monster.depositsTotal; 
     const withdrawalsTotal = isBuy ? monster.withdrawalsTotal : monster.withdrawalsTotal + ethAmount;
     const experiencePoints = calculateExperiencePoints(depositsTotal, withdrawalsTotal);
@@ -145,20 +152,8 @@ CreatureBoringToken.Transfer.handler(async ({ event, context }) => {
   let monster: Monster | undefined = await context.Monster.get(srcAddress);
 
   if (!monster) {
-    // todo: check this logic, it seems a transfer is emitted before a trade happens
-    monster = {
-      id: srcAddress,
-      supply: 0n,
-      price: new BigDecimal(0),
-      marketCap: new BigDecimal(0),
-      totalVolumeTraded: 0n,
-      depositsTotal: 0n,
-      withdrawalsTotal: 0n,      
-      experiencePoints: new BigDecimal(0),    
-      totalWinsCount: 0,
-      totalLossesCount: 0,
-      winLoseRatio: 0,
-    }
+    context.log.error("Transfer event emitted for a non existent monster")
+    return;
   } else {
 
     const transferVolume = new BigDecimal(value.toString()).multipliedBy(monster.price)    

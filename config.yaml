@@ -11,9 +11,7 @@ networks:
     handler: src/EventHandlers.ts
     events:
     - event: event ERC20Initialized(address indexed tokenAddress, string name, string symbol, uint256 initialSupply)
-  - name: CreatureBoringToken
-    address:
-    - 0xEcE0d869b88fb1Daf726609990C8244d2b9A400D 
+  - name: CreatureBoringToken    
     handler: src/EventHandlers.ts
     events:
     # - event: Approval(address indexed owner, address indexed spender, uint256 value)

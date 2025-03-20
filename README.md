@@ -45,6 +45,8 @@ query MyQuery {
 query MyQuery {
   Monster {
     id
+    name
+    symbol
     marketCap
     price
     supply
