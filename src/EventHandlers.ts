@@ -11,7 +11,7 @@ import {
 
 import { createOrUpdateHoldings } from "./helpers/Holdings";
 
-import { WIN_POINTS_MULTIPLIER, TRADE_POINTS_MULTIPLIER } from "./constants";
+import { WIN_POINTS_MULTIPLIER, TRADE_POINTS_MULTIPLIER, MONSTER_XP_MULTIPLIER } from "./constants";
 
 CreatureBoringFactory.ERC20Initialized.contractRegister(({event, context}) => {
   context.addCreatureBoringToken(event.params.tokenAddress)
@@ -42,16 +42,6 @@ CreatureBoringFactory.ERC20Initialized.handler(async ({event, context}) =>{
   context.Monster.set(monster);
 })
 
-const calculateExperiencePoints = (depositsTotal: bigint, withdrawalsTotal: bigint): BigDecimal => {
-  const netFlow: number = parseFloat((depositsTotal - withdrawalsTotal).toString());   
-  const exponent = 1/4; // hardcoded 1/4
-  if (netFlow < 0) {
-    console.log("warning: netFlow is negative?");
-  }
-  const experiencePoints = Math.pow(Math.abs(netFlow), exponent);  
-  return new BigDecimal(experiencePoints);
-};
-
 CreatureBoringToken.Trade.handler(async ({ event, context }) => { 
   
   const { trader, isBuy,  amount, ethAmount, protocolFee } = event.params 
@@ -69,7 +59,8 @@ CreatureBoringToken.Trade.handler(async ({ event, context }) => {
     const supply = isBuy ? monster.supply + amount : monster.supply - amount; // todo: validate this isn't double counting
     const depositsTotal = isBuy ? monster.depositsTotal + ethAmount : monster.depositsTotal; 
     const withdrawalsTotal = isBuy ? monster.withdrawalsTotal : monster.withdrawalsTotal + ethAmount;
-    const experiencePoints = calculateExperiencePoints(depositsTotal, withdrawalsTotal);
+    const experiencePointsChange =  new BigDecimal((ethAmount * BigInt(MONSTER_XP_MULTIPLIER)).toString())
+    const experiencePoints = isBuy ? monster.experiencePoints.plus(experiencePointsChange) : monster.experiencePoints.minus(experiencePointsChange)
 
     monster = {
       ...monster,
