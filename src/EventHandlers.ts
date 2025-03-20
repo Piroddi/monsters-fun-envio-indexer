@@ -15,13 +15,10 @@ import { WIN_POINTS_MULTIPLIER, TRADE_POINTS_MULTIPLIER, MONSTER_XP_MULTIPLIER }
 
 CreatureBoringFactory.ERC20Initialized.contractRegister(({event, context}) => {
   context.addCreatureBoringToken(event.params.tokenAddress)
-},
-{
-  preRegisterDynamicContracts: true
-});
+}, {preRegisterDynamicContracts: true});
 
 CreatureBoringFactory.ERC20Initialized.handler(async ({event, context}) =>{
-  const { tokenAddress, name, symbol, initialSupply } = event.params;
+  const { tokenAddress, name, symbol, initialSupply } = event.params;  
 
   const monster = {
     id: tokenAddress,
@@ -56,7 +53,7 @@ CreatureBoringToken.Trade.handler(async ({ event, context }) => {
     context.log.error("Trade event emitted for a non existent monster")
     return;
   } else {
-    const supply = isBuy ? monster.supply + amount : monster.supply - amount; // todo: validate this isn't double counting
+    const supply = isBuy ? monster.supply + amount : monster.supply - amount;
     const depositsTotal = isBuy ? monster.depositsTotal + ethAmount : monster.depositsTotal; 
     const withdrawalsTotal = isBuy ? monster.withdrawalsTotal : monster.withdrawalsTotal + ethAmount;
     const experiencePointsChange =  new BigDecimal((ethAmount * BigInt(MONSTER_XP_MULTIPLIER)).toString())
@@ -225,7 +222,7 @@ CreatureBoringToken.BattleEnded.handler(async ({ event, context }) => {
 
   let monster = await context.Monster.get(winner);
   if (!monster) {
-    context.log.error("Battle ended on a non existent token") 
+    context.log.error("Battle ended on a non existent monster") 
   } else {
     const isWin = winner == event.srcAddress;
     const newTotalWinsCount = monster.totalWinsCount + (isWin ? 1 : 0);
