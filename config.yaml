@@ -5,6 +5,12 @@ networks:
   start_block: 22798903
   # end_block: 22798918
   contracts:
+  - name: CreatureBoringFactory
+    address:
+    - 0xFf97F43223107d6BB1629e139F71154Be82Fa588
+    handler: src/EventHandlers.ts
+    events:
+    - event: event ERC20Initialized(address indexed tokenAddress, string name, string symbol, uint256 initialSupply)
   - name: CreatureBoringToken
     address:
     - 0xEcE0d869b88fb1Daf726609990C8244d2b9A400D 

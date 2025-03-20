@@ -1,16 +1,24 @@
 import {
-  BigDecimal,
+  CreatureBoringFactory,
   CreatureBoringToken,
   Monster,
   Trade,
   Trader,  
   MarketCapSnapshot,
   TotalVolumeTradedSnapshot,  
+  BigDecimal,
 } from "generated";
 
 import { createOrUpdateHoldings } from "./helpers/Holdings";
 
 import { WIN_POINTS_MULTIPLIER, TRADE_POINTS_MULTIPLIER } from "./constants";
+
+CreatureBoringFactory.ERC20Initialized.contractRegister(({event, context}) => {
+  context.addCreatureBoringToken(event.params.tokenAddress)
+},
+{
+  preRegisterDynamicContracts: true
+});
 
 const calculateExperiencePoints = (depositsTotal: bigint, withdrawalsTotal: bigint): BigDecimal => {
   const netFlow: number = parseFloat((depositsTotal - withdrawalsTotal).toString());   
@@ -134,11 +142,23 @@ CreatureBoringToken.Transfer.handler(async ({ event, context }) => {
   const { logIndex, srcAddress } = event
   const { timestamp, number } = event.block
 
-  let monster = await context.Monster.get(event.srcAddress);
+  let monster: Monster | undefined = await context.Monster.get(srcAddress);
 
   if (!monster) {
-    context.log.error("Transfering a non existent token") // this will show with current monster creation logic - needs the factory deployment version
-    return;
+    // todo: check this logic, it seems a transfer is emitted before a trade happens
+    monster = {
+      id: srcAddress,
+      supply: 0n,
+      price: new BigDecimal(0),
+      marketCap: new BigDecimal(0),
+      totalVolumeTraded: 0n,
+      depositsTotal: 0n,
+      withdrawalsTotal: 0n,      
+      experiencePoints: new BigDecimal(0),    
+      totalWinsCount: 0,
+      totalLossesCount: 0,
+      winLoseRatio: 0,
+    }
   } else {
 
     const transferVolume = new BigDecimal(value.toString()).multipliedBy(monster.price)    
@@ -148,8 +168,21 @@ CreatureBoringToken.Transfer.handler(async ({ event, context }) => {
       ...monster,
       totalVolumeTraded: monster.totalVolumeTraded + transferVolumeBn,
     }
-    context.Monster.set(monster);
+    
   }
+
+  context.Monster.set(monster);
+
+  let traderEntity: Trader | undefined = await context.Trader.get(to);
+
+  if (!traderEntity) {
+    traderEntity = {
+      id: to,
+      numberOfTrades: 0,      
+      points: 0n
+    }
+    context.Trader.set(traderEntity);
+  } 
 
   const tradeOut: Trade = {
     id: hash + "-" + logIndex + "-" + from,
@@ -192,30 +225,19 @@ CreatureBoringToken.Transfer.handler(async ({ event, context }) => {
 CreatureBoringToken.BattleEnded.handler(async ({ event, context }) => {
   const { winner, loser, transferredValue } = event.params;
 
-  let trader = await context.Trader.get(winner);
+  // todo
+  // let trader = await context.Trader.get(trader);
 
-  if (!trader) {
-    context.log.error("Battle ended on a non existent trader") 
-    return
-  }
+  // const additionalPoints = new BigDecimal(WIN_POINTS_MULTIPLIER).multipliedBy(new BigDecimal(currentHoldngs.balance.toString()));
 
-  const currentHoldngs = await context.CurrentHoldings.get(event.srcAddress + "-" + winner);
+  // trader = {
+  //   ...trader,
+  //   points: trader.points + BigInt(additionalPoints.integerValue().toString()),
+  // }
 
-  if (!currentHoldngs) {
-    context.log.error("Winner found for a trader with no tokens") 
-    return
-  }
+  // context.Trader.set(trader);
 
-  const additionalPoints = new BigDecimal(WIN_POINTS_MULTIPLIER).multipliedBy(new BigDecimal(currentHoldngs.balance.toString()));
-
-  trader = {
-    ...trader,
-    points: trader.points + BigInt(additionalPoints.integerValue().toString()),
-  }
-
-  context.Trader.set(trader);
-
-  let monster = await context.Monster.get(event.srcAddress);
+  let monster = await context.Monster.get(winner);
   if (!monster) {
     context.log.error("Battle ended on a non existent token") 
   } else {

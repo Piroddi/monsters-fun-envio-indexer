@@ -1,4 +1,3 @@
-- [] Index Factory contract and dynamically create CreatureBoringToken contracts  
 - [] Update README.md 
 - [] Add hosted service deployment instructions
 - [] GlobalStats entity 

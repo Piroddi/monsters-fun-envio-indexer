@@ -188,5 +188,3 @@ query MyQuery {
 }
 
 ```
-
-Where 7 is the number of monsters
