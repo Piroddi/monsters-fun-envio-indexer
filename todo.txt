@@ -3,6 +3,4 @@
 - [] GlobalStats entity 
         - protocolFees
         - monsters
-- [] Monsters 
-        - experiencePoints
-        - 24 hr queries handling > 1000 entries getWhere()
+- [] Convert errors to warnings for launch

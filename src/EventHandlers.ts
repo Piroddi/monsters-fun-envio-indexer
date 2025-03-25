@@ -9,7 +9,7 @@ import {
   BigDecimal,
 } from "generated";
 
-import { createOrUpdateHoldings } from "./helpers/Holdings";
+import { createOrUpdateHoldingsTransfer, updateHoldingsTrade } from "./helpers/Holdings";
 
 import { WIN_POINTS_MULTIPLIER, TRADE_POINTS_MULTIPLIER, MONSTER_XP_MULTIPLIER } from "./constants";
 
@@ -38,6 +38,72 @@ CreatureBoringFactory.ERC20Initialized.handler(async ({event, context}) =>{
 
   context.Monster.set(monster);
 })
+
+
+CreatureBoringToken.Transfer.handler(async ({ event, context }) => {
+  const { from, to, value } = event.params;  
+  const { hash } = event.transaction
+  const { logIndex, srcAddress } = event
+  const { timestamp, number } = event.block
+
+  let monster: Monster | undefined = await context.Monster.get(srcAddress);
+
+  if (!monster) {
+    context.log.error("Transfer event emitted for a non existent monster")
+    return;
+  }   
+
+  let traderEntity: Trader | undefined = await context.Trader.get(to);
+
+  if (!traderEntity) {
+    traderEntity = {
+      id: to,
+      numberOfTrades: 0,      
+      points: 0n
+    }
+    context.Trader.set(traderEntity);
+  } 
+
+  const tradeOut: Trade = {
+    id: hash + "-" + logIndex + "-" + from,
+    txHash: hash,
+    logIndexTransfer: logIndex,
+    logIndexTrade: -1,
+    monster: srcAddress,
+    trader: from,
+    tradeType: "TRANSFER_OUT" ,
+    amount: value,
+    ethAmount: 0n,
+    blockTimestamp: BigInt(timestamp),
+    blockNumber: BigInt(number),
+  }
+
+  context.Trade.set(tradeOut);
+
+  const tradeIn: Trade = {
+    id: hash + "-" + logIndex + "-" + to,
+    txHash: hash,
+    logIndexTransfer: logIndex,
+    logIndexTrade: -1,
+    monster: srcAddress,
+    trader: to,
+    tradeType: "TRANSFER_IN" ,
+    amount: value,
+    ethAmount: 0n,
+    blockTimestamp: BigInt(timestamp),
+    blockNumber: BigInt(number),
+  }
+
+  context.Trade.set(tradeIn);
+
+  // update the current holding for the from address 
+  await createOrUpdateHoldingsTransfer(context, monster, from, 0n - value, monster.price, hash, logIndex, srcAddress, timestamp);
+
+  // update the current holding for the to address
+  await createOrUpdateHoldingsTransfer(context, monster, to, value, monster.price, hash, logIndex, srcAddress, timestamp);
+
+})
+
 
 CreatureBoringToken.Trade.handler(async ({ event, context }) => { 
   
@@ -72,21 +138,23 @@ CreatureBoringToken.Trade.handler(async ({ event, context }) => {
   }
 
   context.Monster.set(monster);
+    
+  const tradeId = hash + "-" + (logIndex - 1) + "-" + trader; // we subtract 1 from the logIndex as that is the logIndex of the transfer event due to the trade
+  let trade: Trade | undefined = await context.Trade.get(tradeId);
+
+  if (!trade) {
+    context.log.warn("Since a transfer event is always emitted before a trade event, this case should be impossible")    
+  } else {
+    trade = {
+      ...trade,
+      tradeType: isBuy ? "BUY" : "SELL",
+      logIndexTrade: logIndex,
+      ethAmount: ethAmount,      
+    }
   
-  const trade: Trade = {
-    id: hash + "-" + logIndex,
-    txHash: hash,
-    logIndex: logIndex,
-    monster: srcAddress,
-    trader: trader,
-    tradeType: isBuy ? "BUY" : "SELL",
-    amount: amount,
-    ethAmount: ethAmount,
-    blockTimestamp: BigInt(timestamp),
-    blockNumber: BigInt(number),
+    context.Trade.set(trade);    
   }
 
-  context.Trade.set(trade);
 
   let traderEntity: Trader | undefined = await context.Trader.get(trader);
   if (!traderEntity) {
@@ -126,84 +194,10 @@ CreatureBoringToken.Trade.handler(async ({ event, context }) => {
   context.TotalVolumeTradedSnapshot.set(totalVolumeTradedSnapshot);    
 
   // update the current holding for the trader
-  await createOrUpdateHoldings(context, monster, trader, isBuy ? amount : -amount, monster.price, hash, logIndex, srcAddress, timestamp);
+  await updateHoldingsTrade(context, monster, trader, isBuy ? amount : -amount, monster.price, hash, logIndex, srcAddress, timestamp);
   
 });
 
-
-CreatureBoringToken.Transfer.handler(async ({ event, context }) => {
-  const { from, to, value } = event.params;  
-  const { hash } = event.transaction
-  const { logIndex, srcAddress } = event
-  const { timestamp, number } = event.block
-
-  let monster: Monster | undefined = await context.Monster.get(srcAddress);
-
-  if (!monster) {
-    context.log.error("Transfer event emitted for a non existent monster")
-    return;
-  } else {
-
-    const transferVolume = new BigDecimal(value.toString()).multipliedBy(monster.price)    
-    const transferVolumeBn = BigInt(transferVolume.integerValue().toString()) 
-
-    monster = {
-      ...monster,
-      totalVolumeTraded: monster.totalVolumeTraded + transferVolumeBn,
-    }
-    
-  }
-
-  context.Monster.set(monster);
-
-  let traderEntity: Trader | undefined = await context.Trader.get(to);
-
-  if (!traderEntity) {
-    traderEntity = {
-      id: to,
-      numberOfTrades: 0,      
-      points: 0n
-    }
-    context.Trader.set(traderEntity);
-  } 
-
-  const tradeOut: Trade = {
-    id: hash + "-" + logIndex + "-" + from,
-    txHash: hash,
-    logIndex: logIndex,
-    monster: srcAddress,
-    trader: from,
-    tradeType: "TRANSFER_OUT" ,
-    amount: value,
-    ethAmount: 0n,
-    blockTimestamp: BigInt(timestamp),
-    blockNumber: BigInt(number),
-  }
-
-  context.Trade.set(tradeOut);
-
-  const tradeIn: Trade = {
-    id: hash + "-" + logIndex + "-" + to,
-    txHash: hash,
-    logIndex: logIndex,
-    monster: srcAddress,
-    trader: to,
-    tradeType: "TRANSFER_IN" ,
-    amount: value,
-    ethAmount: 0n,
-    blockTimestamp: BigInt(timestamp),
-    blockNumber: BigInt(number),
-  }
-
-  context.Trade.set(tradeIn);
-
-  // update the current holding for the from address 
-  await createOrUpdateHoldings(context, monster, from, 0n - value, monster.price, hash, logIndex, srcAddress, timestamp);
-
-  // update the current holding for the to address
-  await createOrUpdateHoldings(context, monster, to, value, monster.price, hash, logIndex, srcAddress, timestamp);
-
-})
 
 CreatureBoringToken.BattleEnded.handler(async ({ event, context }) => {
   const { winner, loser, transferredValue } = event.params;

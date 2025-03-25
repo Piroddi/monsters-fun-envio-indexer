@@ -52,7 +52,8 @@ enum TradeType {
 type Trade {
     id: ID! # txHash-logIndex
     txHash: String! 
-    logIndex: Int!
+    logIndexTransfer: Int!
+    logIndexTrade: Int!
     monster: String! 
     trader: String! @index
     tradeType: TradeType!
@@ -68,8 +69,7 @@ type Trader {
     numberOfTrades: Int!
     holdings: [CurrentHoldings!]! @derivedFrom(field: "trader")        
     holdingsSnapshots: [HoldingsSnapshot!]! @derivedFrom(field: "trader")
-    points: BigInt! # in 10^18
-    # lifetimePnL: Float! # Lifetime Profit/Loss from Trades
+    points: BigInt! # in 10^18    
 }
 
 type CurrentHoldings {
