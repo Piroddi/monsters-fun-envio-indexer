@@ -152,7 +152,7 @@ describe('CreatureBoringToken', () => {
   });
   
   describe('BattleEnded', () => {
-    it.only('should increment win count on win', async () => {
+    it('should increment win count on win', async () => {
       const mockDb = dbContainer.mockDb      
 
       const event = CreatureBoringToken.BattleEnded.createMockEvent({
@@ -196,7 +196,7 @@ describe('Entities', () => {
       assert.equal(holdings?.balance, BigInt(1));
       assert.equal(holdings?.price.toString(), '1000000000000000000'); // 1 ETH
       assert.equal(holdings?.marketCap.toString(), '1000000000000000000'); // 1 ETH
-      assert.equal(holdings?.averageHoldingsCost.toString(), '1000000000000000000'); // 1 ETH
+      assert.equal(holdings?.totalHoldingsCost.toString(), '1000000000000000000'); // 1 ETH
     });    
   });
 });

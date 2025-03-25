@@ -190,3 +190,23 @@ query MyQuery {
 }
 
 ```
+
+#### Traders lifetime pnl per monster calc
+
+Where absolute profit = total holdings sales value - (total holdings cost value - current holdings value)
+Where absolute profit = totalHoldingsSales - (totalHoldingsCost - marketCap) 
+A negative value indicating a loss
+
+```graphql
+query MyQuery {
+  Trader {
+    id
+    holdings {
+      totalHoldingsCost
+      totalHoldingsSales
+      marketCap
+    }
+  }
+}
+```
+

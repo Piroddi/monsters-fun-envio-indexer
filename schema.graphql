@@ -79,7 +79,8 @@ type CurrentHoldings {
     balance: BigInt!
     price: BigDecimal!
     marketCap: BigDecimal!
-    averageHoldingsCost: BigDecimal!
+    totalHoldingsCost: BigDecimal!
+    totalHoldingsSales: BigDecimal!
 }
 
 type HoldingsSnapshot {
