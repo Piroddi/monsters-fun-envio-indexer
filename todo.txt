@@ -4,3 +4,4 @@
         - protocolFees
         - monsters
 - [] Convert errors to warnings for launch
+- [] pnl is at totalHoldingsSales is at time of last trade  

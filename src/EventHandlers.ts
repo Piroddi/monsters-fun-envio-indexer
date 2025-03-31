@@ -143,6 +143,7 @@ CreatureBoringToken.Trade.handler(async ({ event, context }) => {
   let trade: Trade | undefined = await context.Trade.get(tradeId);
 
   if (!trade) {
+    console.log(trader)
     context.log.warn("Since a transfer event is always emitted before a trade event, this case should be impossible")    
   } else {
     trade = {

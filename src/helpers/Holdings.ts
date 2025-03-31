@@ -15,8 +15,8 @@ export const createOrUpdateHoldingsTransfer = async (context: handlerContext, mo
       monster_id: monster.id,
       trader: trader,
       balance: balance,
-      price: price,
-      marketCap: new BigDecimal(balance.toString()).multipliedBy(price),      
+      lastTradePrice: price,
+      lastTradeMarketCap: new BigDecimal(balance.toString()).multipliedBy(price),      
       totalHoldingsCost: new BigDecimal(balance.toString()).multipliedBy(price),
       totalHoldingsSales: new BigDecimal(0)
     } 
@@ -27,7 +27,7 @@ export const createOrUpdateHoldingsTransfer = async (context: handlerContext, mo
     holding = {
       ...holding,
       balance: holding.balance + balance,
-      marketCap: new BigDecimal(holding.balance.toString()).multipliedBy(price),
+      lastTradeMarketCap: new BigDecimal(holding.balance.toString()).multipliedBy(price),
       totalHoldingsCost: isIncrease ? holding.totalHoldingsCost.plus(new BigDecimal(balance.toString()).multipliedBy(price)) : holding.totalHoldingsCost,
       totalHoldingsSales: !isIncrease ? holding.totalHoldingsSales.minus(new BigDecimal(balance.toString()).multipliedBy(price)) : holding.totalHoldingsSales, 
     }
@@ -59,8 +59,8 @@ export const updateHoldingsTrade = async (context: handlerContext, monster: Mons
     let isIncrease = balance > 0n;
     holding = {
       ...holding,      
-      price: price,
-      marketCap: new BigDecimal(holding.balance.toString()).multipliedBy(price),
+      lastTradePrice: price,
+      lastTradeMarketCap: new BigDecimal(holding.balance.toString()).multipliedBy(price),
       totalHoldingsCost: isIncrease ? holding.totalHoldingsCost.plus(new BigDecimal(balance.toString()).multipliedBy(price)) : holding.totalHoldingsCost,
       totalHoldingsSales: !isIncrease ? holding.totalHoldingsSales.minus(new BigDecimal(balance.toString()).multipliedBy(price)) : holding.totalHoldingsSales, 
     }

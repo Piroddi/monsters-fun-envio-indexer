@@ -77,8 +77,8 @@ type CurrentHoldings {
     monster: Monster! @index
     trader: String! @index
     balance: BigInt!
-    price: BigDecimal!
-    marketCap: BigDecimal!
+    lastTradePrice: BigDecimal!
+    lastTradeMarketCap: BigDecimal!
     totalHoldingsCost: BigDecimal!
     totalHoldingsSales: BigDecimal!
 }
