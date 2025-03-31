@@ -51,6 +51,8 @@ query MyQuery {
     price
     supply
     experiencePoints
+    isInBattle
+    activeOpponent
   }
 }
 ```

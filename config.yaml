@@ -13,7 +13,11 @@ networks:
   - name: CreatureBoringToken    
     handler: src/EventHandlers.ts
     events:
+    - event: BattleStarted(address indexed opponent)
     - event: BattleEnded(address indexed winner, address indexed loser, uint256 transferredValue)
+      field_selection:  
+        transaction_fields: 
+        - "hash"   
     - event: Trade(address indexed trader, bool isBuy, uint256 amount, uint256 ethAmount, uint256 protocolFee)
       field_selection:  
         transaction_fields: 
@@ -23,7 +27,6 @@ networks:
         transaction_fields: 
         - "hash"         
     # - event: Approval(address indexed owner, address indexed spender, uint256 value)
-    # - event: BattleStarted(address indexed opponent)
     # - event: OwnershipTransferred(address indexed previousOwner, address indexed newOwner)
     # - event: Paused(address account)
     # - event: Unpaused(address account)

@@ -12,11 +12,13 @@ type Monster {
     depositsTotal: BigInt! # total ethAmount of all trades where isBuy
     withdrawalsTotal: BigInt! # total ethAmount of all trades where !isBuy
     experiencePoints: BigDecimal! 
-    battleOutcomes: [BattleOutome!]! @derivedFrom(field: "monster")
+    battleOutcomes: [BattleOutcome!]! @derivedFrom(field: "monster")
     totalWinsCount: Int! # total wins
     totalLossesCount: Int! # total losses
     winLoseRatio: Float! # wins / (wins + losses)    
     holdings: [CurrentHoldings!]! @derivedFrom(field: "monster")
+    isInBattle: Boolean! # true if there is a battle in progress
+    activeOpponent: String # address of the opponent in the current battle
 }
 
 type MarketCapSnapshot {
@@ -35,10 +37,12 @@ type TotalVolumeTradedSnapshot {
     totalVolumeTraded: BigInt! 
 }
 
-type BattleOutome {
+type BattleOutcome {
     id: ID! # txHash-logIndex
     monster: String! @index
     win: Boolean! 
+    opponent: String! @index
+    transferredValue: BigInt! @index
     timestamp: BigInt! @index
 }
 
