@@ -1,6 +1,5 @@
-- [] Update README.md 
-- [] Add hosted service deployment instructions
 - [] GlobalStats entity 
-        - protocolFees
-        - monsters
+        - protocolFees        
 - [] Convert errors to warnings for launch
+- [] Trader points
+- [] whitelist buy events

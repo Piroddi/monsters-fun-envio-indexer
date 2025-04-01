@@ -20,6 +20,19 @@ pnpm codegen
 - [pnpm (use v8 or newer)](https://pnpm.io/installation)
 - [Docker desktop](https://www.docker.com/products/docker-desktop/)
 
+## Deployment
+
+[Envio's hosted service](https://envio.dev/explorer) is tightly integrated with github. 
+To deploy this indexer:
+- Login to [envio.dev/app/login](envio.dev/app/login)
+- Add your github organisation
+- Connect your repo (likely a fork of this repo) 
+- Configure the indexer settings
+- Select your plan and follow stripe payment instructions
+- Push to deploy based on your specified branch
+
+For a more detailed guide on how to deploy an indexer, please refer to the [documentation website](https://docs.envio.dev/docs/HyperIndex/hosted-service-deployment).
+
 ## Example queries
 
 Visit http://localhost:8080 to see the GraphQL Playground, local password is `testing`.
