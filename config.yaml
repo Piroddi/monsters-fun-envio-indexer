@@ -26,9 +26,9 @@ networks:
       field_selection:  
         transaction_fields: 
         - "hash"         
+    - event: OwnershipTransferred(address indexed previousOwner, address indexed newOwner)
+    - event: Paused(address account)
+    - event: Unpaused(address account)
     # - event: Approval(address indexed owner, address indexed spender, uint256 value)
-    # - event: OwnershipTransferred(address indexed previousOwner, address indexed newOwner)
-    # - event: Paused(address account)
-    # - event: Unpaused(address account)
     # - event: TokensMigrated(address indexed account, uint256 amount)
     # - event: WhitelistPurchase(address indexed buyer, uint256 amount)

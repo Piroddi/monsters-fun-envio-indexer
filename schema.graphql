@@ -19,6 +19,8 @@ type Monster {
     holdings: [CurrentHoldings!]! @derivedFrom(field: "monster")
     isInBattle: Boolean! # true if there is a battle in progress
     activeOpponent: String # address of the opponent in the current battle
+    contractOwner: String! # address of the owner of the monster contract
+    paused: Boolean! # true if the monster is paused
 }
 
 type MarketCapSnapshot {

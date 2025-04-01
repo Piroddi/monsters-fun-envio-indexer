@@ -11,7 +11,24 @@ import {
 
 import { createOrUpdateHoldingsTransfer, updateHoldingsTrade } from "./helpers/Holdings";
 
+import { createMonster, updateMonster, requireMonster } from "./helpers/monster";
+
 import { WIN_POINTS_MULTIPLIER, TRADE_POINTS_MULTIPLIER, MONSTER_XP_MULTIPLIER } from "./constants";
+
+CreatureBoringToken.OwnershipTransferred.handler(async ({ event, context }) => {
+  const { newOwner } = event.params;
+  const { srcAddress } = event
+  
+  const monster = await context.Monster.get(srcAddress);
+  
+  if (!monster) {
+    await createMonster(context, srcAddress, {contractOwner: newOwner}) 
+  } else {
+    await updateMonster(context, monster, {contractOwner: newOwner})
+    context.log.warn("We expect OwnershipTransferred to be the first event emitted for a monster")
+  }
+  
+})
 
 CreatureBoringFactory.ERC20Initialized.contractRegister(({event, context}) => {
   context.addCreatureBoringToken(event.params.tokenAddress)
@@ -19,28 +36,41 @@ CreatureBoringFactory.ERC20Initialized.contractRegister(({event, context}) => {
 
 CreatureBoringFactory.ERC20Initialized.handler(async ({event, context}) =>{
   const { tokenAddress, name, symbol, initialSupply } = event.params;  
+  
+  const monster = await context.Monster.get(tokenAddress);
 
-  const monster = {
-    id: tokenAddress,
-    name: name,
-    symbol: symbol,
-    supply: initialSupply,
-    price: new BigDecimal(0),
-    marketCap: new BigDecimal(0),
-    totalVolumeTraded: 0n,
-    depositsTotal: 0n,
-    withdrawalsTotal: 0n,      
-    experiencePoints: new BigDecimal(0),    
-    totalWinsCount: 0,
-    totalLossesCount: 0,
-    winLoseRatio: 0,
-    isInBattle: false,
-    activeOpponent: undefined,
+  if (monster) {
+    await updateMonster(context, monster, {name, symbol, supply: initialSupply})
+  } else {
+    context.log.warn("Since Ownership Transferred is emitted before ERC20Initialized, this case should be impossible")
+    await createMonster(context, tokenAddress, {name, symbol, supply: initialSupply})
   }
-
-  context.Monster.set(monster);
 })
 
+
+CreatureBoringToken.Paused.handler(async ({ event, context }) => {  
+  const { srcAddress } = event
+  
+  let monster: Monster | undefined = await context.Monster.get(srcAddress);
+
+  if (monster) {
+    await updateMonster(context, monster, {paused: true})
+  } else {
+    context.log.error("Paused event emitted for a non existent monster")
+  }  
+})
+
+CreatureBoringToken.Unpaused.handler(async ({ event, context }) => {  
+  const { srcAddress } = event
+
+  let monster: Monster | undefined = await context.Monster.get(srcAddress);
+
+  if (monster) {
+    await updateMonster(context, monster, {paused: false})
+  } else {
+    context.log.error("Unpaused event emitted for a non existent monster")
+  }  
+})
 
 CreatureBoringToken.Transfer.handler(async ({ event, context }) => {
   const { from, to, value } = event.params;  
@@ -48,12 +78,7 @@ CreatureBoringToken.Transfer.handler(async ({ event, context }) => {
   const { logIndex, srcAddress } = event
   const { timestamp, number } = event.block
 
-  let monster: Monster | undefined = await context.Monster.get(srcAddress);
-
-  if (!monster) {
-    context.log.error("Transfer event emitted for a non existent monster")
-    return;
-  }   
+  await requireMonster(context, srcAddress, "Transfer event emitted for a non existent monster")
 
   let traderEntity: Trader | undefined = await context.Trader.get(to);
 
@@ -107,8 +132,7 @@ CreatureBoringToken.Transfer.handler(async ({ event, context }) => {
 })
 
 
-CreatureBoringToken.Trade.handler(async ({ event, context }) => { 
-  
+CreatureBoringToken.Trade.handler(async ({ event, context }) => {   
   const { trader, isBuy,  amount, ethAmount, protocolFee } = event.params 
   const { hash } = event.transaction
   const { srcAddress, logIndex } = event
@@ -146,6 +170,8 @@ CreatureBoringToken.Trade.handler(async ({ event, context }) => {
 
   if (!trade) {
     console.log(trader)
+    console.log(hash)
+    context.log.warn("This happens with whitelist mints")    
     context.log.warn("Since a transfer event is always emitted before a trade event, this case should be impossible")    
   } else {
     trade = {
