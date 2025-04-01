@@ -98,3 +98,8 @@ type HoldingsSnapshot {
     marketCap: BigDecimal!
     timestamp: Int! @index
 }
+
+type GlobalStats {
+    id: ID! # 'global'
+    protocolFees: BigInt!
+}

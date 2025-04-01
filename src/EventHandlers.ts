@@ -6,12 +6,15 @@ import {
   Trader,    
   MarketCapSnapshot,
   TotalVolumeTradedSnapshot,  
+  GlobalStats,
   BigDecimal,
 } from "generated";
 
 import { createOrUpdateHoldingsTransfer, updateHoldingsTrade } from "./helpers/Holdings";
 
 import { createMonster, updateMonster, requireMonster } from "./helpers/monster";
+
+import { createGlobalStats, updateGlobalStats, globalStatsId } from "./helpers/GlobalStats";
 
 import { WIN_POINTS_MULTIPLIER, TRADE_POINTS_MULTIPLIER, MONSTER_XP_MULTIPLIER } from "./constants";
 
@@ -78,7 +81,12 @@ CreatureBoringToken.Transfer.handler(async ({ event, context }) => {
   const { logIndex, srcAddress } = event
   const { timestamp, number } = event.block
 
-  await requireMonster(context, srcAddress, "Transfer event emitted for a non existent monster")
+  let monster: Monster | undefined = await context.Monster.get(srcAddress);
+
+  if (!monster) {    
+    context.log.error("Transfer event emitted for a non existent monster")
+    return;
+  }  
 
   let traderEntity: Trader | undefined = await context.Trader.get(to);
 
@@ -138,6 +146,13 @@ CreatureBoringToken.Trade.handler(async ({ event, context }) => {
   const { srcAddress, logIndex } = event
   const { timestamp, number } = event.block
   const price = new BigDecimal(ethAmount.toString()).dividedBy(amount.toString());
+
+  let globalStats: GlobalStats | undefined = await context.GlobalStats.get(globalStatsId);
+  if (globalStats) {
+    await updateGlobalStats(context, globalStats, {protocolFees: globalStats.protocolFees + protocolFee});  
+  } else {
+    await createGlobalStats(context, {protocolFees: protocolFee});
+  }  
 
   let monster: Monster | undefined = await context.Monster.get(srcAddress);
 
