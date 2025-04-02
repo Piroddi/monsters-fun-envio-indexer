@@ -1,5 +1,1 @@
-- [] GlobalStats entity 
-        - protocolFees        
-- [] Convert errors to warnings for launch
-- [] Trader points
 - [] whitelist buy events

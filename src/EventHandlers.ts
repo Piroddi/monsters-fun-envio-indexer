@@ -6,6 +6,7 @@ import {
   Trader,    
   MarketCapSnapshot,
   TotalVolumeTradedSnapshot,  
+  CurrentHoldings,
   GlobalStats,
   BigDecimal,
 } from "generated";
@@ -113,7 +114,7 @@ CreatureBoringToken.Transfer.handler(async ({ event, context }) => {
     blockNumber: BigInt(number),
   }
 
-  context.Trade.set(tradeOut);
+  context.Trade.set(tradeOut);  
 
   const tradeIn: Trade = {
     id: hash + "-" + logIndex + "-" + to,
@@ -261,52 +262,74 @@ CreatureBoringToken.BattleStarted.handler(async ({ event, context }) => {
 
 })
 
-CreatureBoringToken.BattleEnded.handler(async ({ event, context }) => {
-  const { winner, loser, transferredValue } = event.params;
-  const { srcAddress, logIndex } = event
-  const { hash } = event.transaction
-  const { timestamp } = event.block
+CreatureBoringToken.BattleEnded.handlerWithLoader({
+  loader: async ({ event, context }) => { 
+    const { winner } = event.params;
+    const { srcAddress } = event
+    const isWin = winner == srcAddress;
 
-  // todo
-  // let trader = await context.Trader.get(trader);
+    let allCurrentHoldings: CurrentHoldings[] = [];
 
-  // const additionalPoints = new BigDecimal(WIN_POINTS_MULTIPLIER).multipliedBy(new BigDecimal(currentHoldngs.balance.toString()));
+    if (isWin) {
+      allCurrentHoldings = await context.CurrentHoldings.getWhere.monster_id.eq(
+        event.srcAddress,
+      );
+    }
 
-  // trader = {
-  //   ...trader,
-  //   points: trader.points + BigInt(additionalPoints.integerValue().toString()),
-  // }
+    return { allCurrentHoldings };
+  },
+  handler: async ({ event, context, loaderReturn }) => {
+    const { winner, loser, transferredValue } = event.params;
+    const { srcAddress, logIndex } = event
+    const { hash } = event.transaction
+    const { timestamp } = event.block
+    const  { allCurrentHoldings } = loaderReturn;
 
-  // context.Trader.set(trader);
+    const isWin = winner == srcAddress;
 
-  const isWin = winner == srcAddress;
+    if (isWin) {
+      allCurrentHoldings.forEach(async (currentHoldings) => {        
+        let trader = await context.Trader.get(currentHoldings.trader);
+        if (!trader) {
+          context.log.error("Trader has holdings but is not in the database")
+          return;
+        }
+        const additionalPoints = new BigDecimal(WIN_POINTS_MULTIPLIER).multipliedBy(new BigDecimal(currentHoldings.balance.toString()));
+        trader = {
+          ...trader,
+          points: trader.points + BigInt(additionalPoints.integerValue().toString()),
+        }
+        
+        context.Trader.set(trader);
+      })
+    }
 
-  let monster = await context.Monster.get(srcAddress);
-  if (!monster) {
-    context.log.error("Battle ended on a non existent monster") 
-  } else {
-    const newTotalWinsCount = monster.totalWinsCount + (isWin ? 1 : 0);
-    const newTotalLossesCount = monster.totalLossesCount + (!isWin ? 1 : 0);
-    const newWinLoseRatio = newTotalWinsCount / (newTotalWinsCount + newTotalLossesCount);
+    let monster = await context.Monster.get(srcAddress);
+    if (!monster) {
+      context.log.error("Battle ended on a non existent monster") 
+    } else {
+      const newTotalWinsCount = monster.totalWinsCount + (isWin ? 1 : 0);
+      const newTotalLossesCount = monster.totalLossesCount + (!isWin ? 1 : 0);
+      const newWinLoseRatio = newTotalWinsCount / (newTotalWinsCount + newTotalLossesCount);
 
-    monster = {
-      ...monster,
-      totalWinsCount: newTotalWinsCount,
-      totalLossesCount: newTotalLossesCount,
-      winLoseRatio: newWinLoseRatio,
-      isInBattle: false,
-      activeOpponent: undefined,
-    }    
-    context.Monster.set(monster);
+      monster = {
+        ...monster,
+        totalWinsCount: newTotalWinsCount,
+        totalLossesCount: newTotalLossesCount,
+        winLoseRatio: newWinLoseRatio,
+        isInBattle: false,
+        activeOpponent: undefined,
+      }    
+      context.Monster.set(monster);
+    }
+
+    context.BattleOutcome.set({
+      id: hash + "-" + logIndex,
+      monster: srcAddress,
+      win: isWin,
+      timestamp: BigInt(timestamp),
+      opponent: isWin ? loser : winner,
+      transferredValue: transferredValue,
+    })
   }
-
-  context.BattleOutcome.set({
-    id: hash + "-" + logIndex,
-    monster: srcAddress,
-    win: isWin,
-    timestamp: BigInt(timestamp),
-    opponent: isWin ? loser : winner,
-    transferredValue: transferredValue,
-  })
-
 })
