@@ -49,7 +49,7 @@ export const createOrUpdateHoldingsTransfer = async (context: handlerContext, mo
   
 }
 
-export const updateHoldingsTrade = async (context: handlerContext, monster: Monster, trader: string, balance: bigint, price: BigDecimal, hash: string, logIndex: number, srcAddress: string, blockTimestamp: number) => {
+export const updateHoldingsTrade = async (context: handlerContext, monster: Monster, trader: string, balance: bigint, price: BigDecimal, hash: string, logIndex: number, srcAddress: string, blockTimestamp: number) => {  
   let holding: CurrentHoldings | undefined = await context.CurrentHoldings.get(monster.id + "-" + trader);
   
   if (!holding) {

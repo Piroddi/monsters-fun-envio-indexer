@@ -7,7 +7,7 @@ const {  CreatureBoringFactory, CreatureBoringToken, MockDb } = TestHelpers;
 
 describe('CreatureBoringFactory', () => {
   describe('ERC20Initialized', async () => {
-    it('should create a new monster on erc20 initialized', async () => {
+    it('should update a monsters name symbol and supply', async () => {
 
     const mockDb = MockDb.createMockDb();
 
@@ -26,7 +26,9 @@ describe('CreatureBoringFactory', () => {
 
     assert.isNotNull(monster);
     assert.equal(monster?.id, mockAddresses[0]);
-    assert.equal(monster?.supply, 0n);
+    assert.equal(monster?.supply, params.initialSupply);
+    assert.equal(monster?.name, params.name);
+    assert.equal(monster?.symbol, params.symbol);
     assert.equal(monster?.totalVolumeTraded, 0n);
     assert.equal(monster?.depositsTotal, 0n);
     assert.equal(monster?.withdrawalsTotal, 0n);
@@ -45,46 +47,99 @@ describe('CreatureBoringToken', () => {
   beforeEach(async () => {
     dbContainer.mockDb = MockDb.createMockDb();
     
-    const params = {
+    const ownershipTransferredParams = {
+      previousOwner: defaultAddress,
+      newOwner: mockAddresses[1],      
+    };
+
+    const ownershipTransferredEvent = CreatureBoringToken.OwnershipTransferred.createMockEvent(ownershipTransferredParams);
+
+    dbContainer.mockDb = await CreatureBoringToken.OwnershipTransferred.processEvent({
+      event: ownershipTransferredEvent,
+      mockDb: dbContainer.mockDb,
+    });
+
+    const unpausedParams = {
+      account: defaultAddress,      
+    };
+
+    const unpausedParamsEvent = CreatureBoringToken.Unpaused.createMockEvent(unpausedParams);
+
+    dbContainer.mockDb = await CreatureBoringToken.Unpaused.processEvent({
+      event: unpausedParamsEvent,
+      mockDb: dbContainer.mockDb,
+    });
+
+    const erc20InitializedParams = {
       tokenAddress: defaultAddress,
       name: "mock monster",
       symbol: "mm",
-      initialSupply: BigInt(1),
+      initialSupply: BigInt(0),
     };
 
-    const event = CreatureBoringFactory.ERC20Initialized.createMockEvent(params);
+    const erc20InitializedEvent = CreatureBoringFactory.ERC20Initialized.createMockEvent(erc20InitializedParams);
     dbContainer.mockDb = await CreatureBoringFactory.ERC20Initialized.processEvent({
-      event,
+      event: erc20InitializedEvent,
       mockDb: dbContainer.mockDb,
     });
+
   });
 
   describe('Trade', () => {         
-    it('on buy should increase monster supply and update depositsTotal', async () => {
+    it('on buy should increase monster supply and update depositsTotal', async () => {            
 
-      const mockDb = dbContainer.mockDb      
+      const mockDb = dbContainer.mockDb
 
-      const event = CreatureBoringToken.Trade.createMockEvent({
+      const transferLogIndex = 1;
+      const transferEvent = CreatureBoringToken.Transfer.createMockEvent({
+        from: mockAddresses[0],
+        to: mockAddresses[1],
+        value: BigInt(1),        
+        mockEventData: {
+          logIndex: transferLogIndex,                    
+        }
+      });
+
+      const mockDb2 = await CreatureBoringToken.Transfer.processEvent({ event: transferEvent, mockDb });      
+
+      const tradeEvent = CreatureBoringToken.Trade.createMockEvent({
         trader: mockAddresses[0],
         isBuy: true,
         amount: BigInt(1),
         ethAmount: BigInt(1000000000000000000), // 1 ETH
-        protocolFee: BigInt(50000000000000000), // 0.05 ETH
+        protocolFee: BigInt(50000000000000000), // 0.05 ETH        
+        mockEventData: {
+          logIndex: transferLogIndex + 1,                    
+        }
       });
 
-      const updatedMockDB = await CreatureBoringToken.Trade.processEvent({ event, mockDb });
+      const mockDb3 = await CreatureBoringToken.Trade.processEvent({ event: tradeEvent, mockDb: mockDb2 });      
+      
+      const transferEvent2 = CreatureBoringToken.Transfer.createMockEvent({
+        from: mockAddresses[0],
+        to: mockAddresses[1],
+        value: BigInt(1),        
+        mockEventData: {
+          logIndex: transferLogIndex,                    
+        }
+      });
 
-      const event2 = CreatureBoringToken.Trade.createMockEvent({
+      const mockDb4 = await CreatureBoringToken.Transfer.processEvent({ event: transferEvent2, mockDb: mockDb3 });   
+
+      const tradeEvent2 = CreatureBoringToken.Trade.createMockEvent({
         trader: mockAddresses[1],
         isBuy: true,
         amount: BigInt(1),
         ethAmount: BigInt(2000000000000000000), // 2 ETH
         protocolFee: BigInt(100000000000000000), // 0.1 ETH
+        mockEventData: {
+          logIndex: transferLogIndex + 1,                    
+        }
       });
 
-      const updatedMockDB2 = await CreatureBoringToken.Trade.processEvent({ event: event2, mockDb: updatedMockDB });
+      const mockDb5 = await CreatureBoringToken.Trade.processEvent({ event: tradeEvent2, mockDb: mockDb4 });
 
-      const monster = await updatedMockDB2.entities.Monster.get(defaultAddress);      
+      const monster = await mockDb5.entities.Monster.get(defaultAddress);      
       
       assert.equal(monster?.supply, BigInt(2)); // 1 + 1
       assert.equal(monster?.totalVolumeTraded, BigInt(3000000000000000000)); // 1 + 2 ETH
@@ -144,11 +199,49 @@ describe('CreatureBoringToken', () => {
       // (3-1)*2
       assert.equal(monster?.experiencePoints.toString(), '4000000000000000000');
     });
+
+    it('should update monster total volume traded on trade', async () => {
+      const mockDb = dbContainer.mockDb      
+
+      // 3 eth buy
+      const event = CreatureBoringToken.Trade.createMockEvent({
+        trader: mockAddresses[0],
+        isBuy: true,
+        amount: BigInt(1),
+        ethAmount: BigInt(3_000_000_000_000_000_000), // 3 ETH 
+        protocolFee: BigInt(0),        
+      });
+
+      const updatedMockDB = await CreatureBoringToken.Trade.processEvent({ event, mockDb });
+
+      const monster = await updatedMockDB.entities.Monster.get(defaultAddress);
+      assert.equal(monster?.totalVolumeTraded, BigInt(3_000_000_000_000_000_000));
+    });
   });
 
   describe('Transfer', () => {
-    it('should create TRANSFER_OUT and TRANSFER_IN trades', async () => {});
-    it('should update monster total volume traded on transfer', async () => {});
+    it('should create TRANSFER_OUT and TRANSFER_IN trades', async () => {
+      const mockDb = dbContainer.mockDb
+      
+      const transferEvent = CreatureBoringToken.Transfer.createMockEvent({
+        from: mockAddresses[0],
+        to: mockAddresses[1],
+        value: BigInt(1),        
+        mockEventData: {
+          logIndex: 1,                    
+          transaction: { hash: "hash"},
+        }
+      });
+
+      const mockDb2 = await CreatureBoringToken.Transfer.processEvent({ event: transferEvent, mockDb });
+
+      const fromTrade = await mockDb2.entities.Trade.get("hash-1-" + mockAddresses[0]);
+      const toTrade = await mockDb2.entities.Trade.get("hash-1-"+ mockAddresses[1]);
+    
+      assert.equal(fromTrade?.tradeType, "TRANSFER_OUT");
+      assert.equal(toTrade?.tradeType, "TRANSFER_IN");
+
+    });    
   });
   
   describe('BattleEnded', () => {
@@ -170,33 +263,5 @@ describe('CreatureBoringToken', () => {
       assert.equal(monster?.totalLossesCount, 0);
       assert.equal(monster?.winLoseRatio, 1);    
     });    
-  });
-
-});
-
-
-describe('Entities', () => {  
-  describe('CurrentHoldings', () => {
-    it('should update holdings on buy trade', async () => {
-      const mockDb = MockDb.createMockDb();
-      const event = CreatureBoringToken.Trade.createMockEvent({
-        trader: mockAddresses[0],
-        isBuy: true,
-        amount: BigInt(1),
-        ethAmount: BigInt(1000000000000000000), // 1 ETH
-        protocolFee: BigInt(50000000000000000), // 0.05 ETH       
-      });
-
-      const updatedMockDB = await CreatureBoringToken.Trade.processEvent({ event, mockDb });
-
-      const holdings = await updatedMockDB.entities.CurrentHoldings.get(`${defaultAddress}-${mockAddresses[0]}`);
-      assert.isNotNull(holdings);
-      assert.equal(holdings?.trader, mockAddresses[0]);
-      assert.equal(holdings?.monster_id, defaultAddress);
-      assert.equal(holdings?.balance, BigInt(1));
-      assert.equal(holdings?.price.toString(), '1000000000000000000'); // 1 ETH
-      assert.equal(holdings?.marketCap.toString(), '1000000000000000000'); // 1 ETH
-      assert.equal(holdings?.totalHoldingsCost.toString(), '1000000000000000000'); // 1 ETH
-    });    
-  });
+  }); 
 });

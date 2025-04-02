@@ -56,7 +56,7 @@ enum TradeType {
 }
 
 type Trade {
-    id: ID! # txHash-logIndex
+    id: ID! # txHash-logIndex-trader
     txHash: String! 
     logIndexTransfer: Int!
     logIndexTrade: Int!

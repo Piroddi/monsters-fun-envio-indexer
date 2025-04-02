@@ -140,12 +140,11 @@ CreatureBoringToken.Transfer.handler(async ({ event, context }) => {
 
 })
 
-
 CreatureBoringToken.Trade.handler(async ({ event, context }) => {   
   const { trader, isBuy,  amount, ethAmount, protocolFee } = event.params 
   const { hash } = event.transaction
   const { srcAddress, logIndex } = event
-  const { timestamp, number } = event.block
+  const { timestamp } = event.block
   const price = new BigDecimal(ethAmount.toString()).dividedBy(amount.toString());
 
   let globalStats: GlobalStats | undefined = await context.GlobalStats.get(globalStatsId);
