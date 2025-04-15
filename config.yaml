@@ -1,15 +1,15 @@
 # yaml-language-server: $schema=./node_modules/envio/evm.schema.json
 name: monsters.fun
 networks:
-- id: 84532
-  start_block: 22798903  
+- id: 421614
+  start_block: 142033838  
   contracts:
   - name: CreatureBoringFactory
     address:
-    - 0xFf97F43223107d6BB1629e139F71154Be82Fa588
+    - 0x8E8E63ac2106A6D0De605EeEe0F738590D31572D
     handler: src/EventHandlers.ts
     events:
-    - event: event ERC20Initialized(address indexed tokenAddress, string name, string symbol, uint256 initialSupply)
+    - event: event TokenCreated(address tokenAddress, string name, string symbol)
   - name: CreatureBoringToken    
     handler: src/EventHandlers.ts
     events:
@@ -26,9 +26,11 @@ networks:
       field_selection:  
         transaction_fields: 
         - "hash"         
+    - event: PriceUpdate(uint256 newPrice, uint256 tokenSupply, uint256 curveMultiplierValue)
     - event: OwnershipTransferred(address indexed previousOwner, address indexed newOwner)
     - event: Paused(address account)
     - event: Unpaused(address account)
+raw_events: true
     # - event: Approval(address indexed owner, address indexed spender, uint256 value)
     # - event: TokensMigrated(address indexed account, uint256 amount)
     # - event: WhitelistPurchase(address indexed buyer, uint256 amount)

@@ -6,7 +6,7 @@ import { TRADE_POINTS_MULTIPLIER, WIN_POINTS_MULTIPLIER } from '../src/constants
 const {  CreatureBoringFactory, CreatureBoringToken, MockDb } = TestHelpers;
 
 describe('CreatureBoringFactory', () => {
-  describe('ERC20Initialized', async () => {
+  describe('TokenCreated', async () => {
     it('should update a monsters name symbol and supply', async () => {
 
     const mockDb = MockDb.createMockDb();
@@ -14,19 +14,17 @@ describe('CreatureBoringFactory', () => {
     const params = {
       tokenAddress: mockAddresses[0],
       name: "mock monster",
-      symbol: "mm",
-      initialSupply: 0n,
+      symbol: "mm",      
     }
 
-    const event = CreatureBoringFactory.ERC20Initialized.createMockEvent(params);
+    const event = CreatureBoringFactory.TokenCreated.createMockEvent(params);
 
-    const updatedMockDB = await CreatureBoringFactory.ERC20Initialized.processEvent({ event, mockDb });
+    const updatedMockDB = await CreatureBoringFactory.TokenCreated.processEvent({ event, mockDb });
 
     const monster = updatedMockDB.entities.Monster.get(mockAddresses[0]);
 
     assert.isNotNull(monster);
     assert.equal(monster?.id, mockAddresses[0]);
-    assert.equal(monster?.supply, params.initialSupply);
     assert.equal(monster?.name, params.name);
     assert.equal(monster?.symbol, params.symbol);
     assert.equal(monster?.totalVolumeTraded, 0n);
@@ -73,12 +71,11 @@ describe('CreatureBoringToken', () => {
     const erc20InitializedParams = {
       tokenAddress: defaultAddress,
       name: "mock monster",
-      symbol: "mm",
-      initialSupply: BigInt(0),
+      symbol: "mm",      
     };
 
-    const erc20InitializedEvent = CreatureBoringFactory.ERC20Initialized.createMockEvent(erc20InitializedParams);
-    dbContainer.mockDb = await CreatureBoringFactory.ERC20Initialized.processEvent({
+    const erc20InitializedEvent = CreatureBoringFactory.TokenCreated.createMockEvent(erc20InitializedParams);
+    dbContainer.mockDb = await CreatureBoringFactory.TokenCreated.processEvent({
       event: erc20InitializedEvent,
       mockDb: dbContainer.mockDb,
     });

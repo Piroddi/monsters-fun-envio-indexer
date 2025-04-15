@@ -28,26 +28,25 @@ CreatureBoringToken.OwnershipTransferred.handler(async ({ event, context }) => {
   if (!monster) {
     await createMonster(context, srcAddress, {contractOwner: newOwner}) 
   } else {
-    await updateMonster(context, monster, {contractOwner: newOwner})
-    context.log.warn("We expect OwnershipTransferred to be the first event emitted for a monster")
+    await updateMonster(context, monster, {contractOwner: newOwner})    
   }
   
 })
 
-CreatureBoringFactory.ERC20Initialized.contractRegister(({event, context}) => {
+CreatureBoringFactory.TokenCreated.contractRegister(({event, context}) => {
   context.addCreatureBoringToken(event.params.tokenAddress)
 }, {preRegisterDynamicContracts: true});
 
-CreatureBoringFactory.ERC20Initialized.handler(async ({event, context}) =>{
-  const { tokenAddress, name, symbol, initialSupply } = event.params;  
+CreatureBoringFactory.TokenCreated.handler(async ({event, context}) =>{
+  const { tokenAddress, name, symbol } = event.params;  
   
   const monster = await context.Monster.get(tokenAddress);
 
   if (monster) {
-    await updateMonster(context, monster, {name, symbol, supply: initialSupply})
+    await updateMonster(context, monster, {name, symbol})
   } else {
     context.log.warn("Since Ownership Transferred is emitted before ERC20Initialized, this case should be impossible")
-    await createMonster(context, tokenAddress, {name, symbol, supply: initialSupply})
+    await createMonster(context, tokenAddress, {name, symbol})
   }
 })
 
@@ -144,8 +143,7 @@ CreatureBoringToken.Trade.handler(async ({ event, context }) => {
   const { trader, isBuy,  amount, ethAmount, protocolFee } = event.params 
   const { hash } = event.transaction
   const { srcAddress, logIndex } = event
-  const { timestamp } = event.block
-  const price = new BigDecimal(ethAmount.toString()).dividedBy(amount.toString());
+  const { timestamp } = event.block  
 
   let globalStats: GlobalStats | undefined = await context.GlobalStats.get(globalStatsId);
   if (globalStats) {
@@ -168,9 +166,7 @@ CreatureBoringToken.Trade.handler(async ({ event, context }) => {
 
     monster = {
       ...monster,
-      supply: supply,
-      price: price,
-      marketCap: price.multipliedBy(supply.toString()),
+      supply: supply,      
       totalVolumeTraded: monster.totalVolumeTraded + ethAmount,
       depositsTotal: depositsTotal,
       withdrawalsTotal: withdrawalsTotal,
@@ -184,10 +180,23 @@ CreatureBoringToken.Trade.handler(async ({ event, context }) => {
   let trade: Trade | undefined = await context.Trade.get(tradeId);
 
   if (!trade) {
-    console.log(trader)
-    console.log(hash)
-    context.log.warn("This happens with whitelist mints")    
-    context.log.warn("Since a transfer event is always emitted before a trade event, this case should be impossible")    
+    // this is a whitelist trade
+    const tradeId = hash + "-" + (logIndex - 2) + "-" + trader; // we subtract 2 from the logIndex as that is the logIndex of the transfer event due to the trade during a whitelist trade event
+    let whitelistedTrade : Trade | undefined = await context.Trade.get(tradeId);
+
+    if (!whitelistedTrade) {
+      console.log(trader)
+      console.log(hash)    
+      context.log.warn("This case shouldn't be impossible")    
+    } else {
+      whitelistedTrade = {
+        ...whitelistedTrade,
+        tradeType: isBuy ? "BUY" : "SELL",
+        logIndexTrade: logIndex,
+        ethAmount: ethAmount,      
+      }
+      context.Trade.set(whitelistedTrade);
+    }
   } else {
     trade = {
       ...trade,
@@ -241,6 +250,20 @@ CreatureBoringToken.Trade.handler(async ({ event, context }) => {
   await updateHoldingsTrade(context, monster, trader, isBuy ? amount : -amount, monster.price, hash, logIndex, srcAddress, timestamp);
   
 });
+
+// PriceUpdate(uint256 newPrice, uint256 tokenSupply, uint256 curveMultiplierValue)
+CreatureBoringToken.PriceUpdate.handler(async ({event, context}) => {
+  const { newPrice, tokenSupply } = event.params
+  const { srcAddress } = event
+
+  const monster = await context.Monster.get(srcAddress);
+
+  if (monster) {
+    updateMonster(context, monster, {price: new BigDecimal(newPrice.toString()), marketCap: new BigDecimal(newPrice.toString()).multipliedBy(tokenSupply.toString())}) 
+  } else {
+    context.log.warn(`Trying to update price on non existent monster: ${srcAddress}`)  
+  }
+})
 
 CreatureBoringToken.BattleStarted.handler(async ({ event, context }) => {
   const { opponent } = event.params;
