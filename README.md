@@ -168,14 +168,26 @@ query MyQuery {
 
 ### Traders current holdings
 
-- Current market cap: For each monster sum the marketCap
+- Current market cap: For each monster get the current price & multiply by traders current holdings balance
+
+```graphql
+query MyQuery {
+  Monster {
+    id
+    price
+  }
+}
+```
 
 ```graphql
 query MyQuery {
   Trader {
     id
     holdings {
-      marketCap
+      monster {
+        id
+      }
+      balance
     }
   }
 }
