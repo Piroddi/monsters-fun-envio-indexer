@@ -75,6 +75,7 @@ type Trader {
     numberOfTrades: Int!
     holdings: [CurrentHoldings!]! @derivedFrom(field: "trader")        
     holdingsSnapshots: [HoldingsSnapshot!]! @derivedFrom(field: "trader")
+    whitelistPurchaseSnapshots: [WhitelistPurchaseSnapshot!]! @derivedFrom(field: "trader")
     points: BigInt! # in 10^18    
 }
 
@@ -97,6 +98,14 @@ type HoldingsSnapshot {
     balance: BigInt!
     marketCap: BigDecimal!
     timestamp: Int! @index
+}
+
+type WhitelistPurchaseSnapshot {
+    id: ID! # txHash-logIndex
+    monster: Monster! @index    
+    trader: String! @index    
+    timestamp: Int! @index
+    ethAmountPurchased: BigInt!
 }
 
 type GlobalStats {

@@ -7,6 +7,7 @@ import {
   MarketCapSnapshot,
   TotalVolumeTradedSnapshot,  
   CurrentHoldings,
+  WhitelistPurchaseSnapshot,
   GlobalStats,
   BigDecimal,
 } from "generated";
@@ -187,15 +188,23 @@ CreatureBoringToken.Trade.handler(async ({ event, context }) => {
     if (!whitelistedTrade) {
       console.log(trader)
       console.log(hash)    
-      context.log.warn("This case shouldn't be impossible")    
+      context.log.warn("This case shouldn't be possible")    
     } else {
       whitelistedTrade = {
         ...whitelistedTrade,
-        tradeType: isBuy ? "BUY" : "SELL",
+        tradeType: isBuy ? "BUY" : "SELL", // I believe this will only ever be a buy
         logIndexTrade: logIndex,
         ethAmount: ethAmount,      
       }
       context.Trade.set(whitelistedTrade);
+      const whitelistPurchaseSnapshot: WhitelistPurchaseSnapshot = {
+        id: hash + "-" + logIndex,
+        monster_id: srcAddress,
+        trader: trader,
+        timestamp: timestamp,
+        ethAmountPurchased: ethAmount,
+      }
+      context.WhitelistPurchaseSnapshot.set(whitelistPurchaseSnapshot);      
     }
   } else {
     trade = {
