@@ -237,3 +237,19 @@ query MyQuery {
 }
 ```
 
+#### Traders whitelist purchase amount in eth in the last 24 hours
+
+Take the sum of the ethAmountPurchased for all the whitelistPurchaseSnapshots where the timestamp is greater than the current timestamp minus 24 hours
+
+> Note: In the rare case the user has done > 1000 whitelist purchases in the last 24 hour period, this query will need to be paginated ie set offset and limit and fetch data in 1000 data points per request. Since this is a very odd occurrence, you could inaccurately assume that if a user has done > 1000 whitelist purchases in the last 24 hours that they have exceeded the 0.1 eth limit.
+
+
+```graphql
+query MyQuery {
+  WhitelistPurchaseSnapshot(where: {trader: {_eq: "0x8c0686723804A0B7201151852C94Bd17DD043C21"}, _and: {monster_id: {_eq: "0x8Bd6e4fa6D9cc89656dC20A3F092C03BD9543FB7"}, _and: {timestamp: {_gt: $nowLess24Hours}}}}) {
+    ethAmountPurchased
+    trader
+    monster_id
+  }
+}
+```
