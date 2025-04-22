@@ -1,12 +1,14 @@
 # yaml-language-server: $schema=./node_modules/envio/evm.schema.json
 name: monsters.fun
 networks:
-- id: 421614
-  start_block: 142033838  
+- id: 11124
+  start_block: 8963740
+  rpc_config: 
+    url: https://api.testnet.abs.xyz  
   contracts:
   - name: CreatureBoringFactory
     address:
-    - 0x8E8E63ac2106A6D0De605EeEe0F738590D31572D
+    - 0xd96623b95abf7acc754642bc0e057afe302832e8
     handler: src/EventHandlers.ts
     events:
     - event: event TokenCreated(address tokenAddress, string name, string symbol)
@@ -30,7 +32,7 @@ networks:
     - event: OwnershipTransferred(address indexed previousOwner, address indexed newOwner)
     - event: Paused(address account)
     - event: Unpaused(address account)
-raw_events: true
+# raw_events: true
     # - event: Approval(address indexed owner, address indexed spender, uint256 value)
     # - event: TokensMigrated(address indexed account, uint256 amount)
     # - event: WhitelistPurchase(address indexed buyer, uint256 amount)
