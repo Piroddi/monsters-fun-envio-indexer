@@ -253,3 +253,15 @@ query MyQuery {
   }
 }
 ```
+
+#### Price snapshots for pricing graphs
+
+The below query may need to be modified slightly (paginated, gt timestamp etc)
+
+```graphql
+query MyQuery {
+  PriceSnapShot(where: {monster: {_eq: "0xEcE0d869b88fb1Daf726609990C8244d2b9A400D"}}, order_by: {timestamp: desc}) {
+    timestamp
+    price    
+  }
+}

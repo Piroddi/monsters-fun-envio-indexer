@@ -4,6 +4,7 @@ type Monster {
     symbol: String!
     supply: BigInt!
     price: BigDecimal!
+    PriceSnapShot: [PriceSnapShot!]! @derivedFrom(field: "monster")
     marketCap: BigDecimal!
     marketCapSnapshots: [MarketCapSnapshot!]! @derivedFrom(field: "monster")
     totalVolumeTraded: BigInt! # total ethAmount of all buy / sells / trades
@@ -22,6 +23,14 @@ type Monster {
     contractOwner: String! # address of the owner of the monster contract
     paused: Boolean! # true if the monster is paused
 }
+
+type PriceSnapShot {
+    id: ID! # txHash-logIndex
+    monster: String!
+    timestamp: BigInt! @index
+    price: BigDecimal!
+}
+
 
 type MarketCapSnapshot {
     id: ID! # txHash-logIndex

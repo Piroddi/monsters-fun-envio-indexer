@@ -263,12 +263,20 @@ CreatureBoringToken.Trade.handler(async ({ event, context }) => {
 // PriceUpdate(uint256 newPrice, uint256 tokenSupply, uint256 curveMultiplierValue)
 CreatureBoringToken.PriceUpdate.handler(async ({event, context}) => {
   const { newPrice, tokenSupply } = event.params
-  const { srcAddress } = event
+  const { hash } = event.transaction
+  const { timestamp } = event.block
+  const { srcAddress, logIndex } = event
 
   const monster = await context.Monster.get(srcAddress);
 
   if (monster) {
     updateMonster(context, monster, {price: new BigDecimal(newPrice.toString()), marketCap: new BigDecimal(newPrice.toString()).multipliedBy(tokenSupply.toString())}) 
+    context.PriceSnapShot.set({
+      id: hash + "-" + logIndex,
+      monster: srcAddress,
+      timestamp: BigInt(timestamp),
+      price: new BigDecimal(newPrice.toString()),
+    })
   } else {
     context.log.warn(`Trying to update price on non existent monster: ${srcAddress}`)  
   }

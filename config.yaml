@@ -3,8 +3,7 @@ name: monsters.fun
 networks:
 - id: 11124
   start_block: 8963740
-  rpc_config: 
-    url: https://api.testnet.abs.xyz  
+  rpc: https://api.testnet.abs.xyz  
   contracts:
   - name: CreatureBoringFactory
     address:
@@ -29,6 +28,9 @@ networks:
         transaction_fields: 
         - "hash"         
     - event: PriceUpdate(uint256 newPrice, uint256 tokenSupply, uint256 curveMultiplierValue)
+      field_selection:  
+        transaction_fields: 
+        - "hash"   
     - event: OwnershipTransferred(address indexed previousOwner, address indexed newOwner)
     - event: Paused(address account)
     - event: Unpaused(address account)
