@@ -12,7 +12,7 @@ networks:
     events:
     - event: event TokenCreated(address tokenAddress, string name, string symbol)
   - name: CreatureBoringToken    
-    handler: src/EventHandler.ts
+    handler: src/EventHandlers.ts
     events:
     - event: BattleStarted(address indexed opponent)
     - event: BattleEnded(address indexed winner, address indexed loser, uint256 transferredValue)
