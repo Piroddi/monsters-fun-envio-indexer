@@ -1,16 +1,4 @@
-import {
-  CreatureBoringFactory,
-  CreatureBoringToken,
-  Monster,
-  Trade,
-  Trader,    
-  MarketCapSnapshot,
-  TotalVolumeTradedSnapshot,  
-  CurrentHoldings,
-  WhitelistPurchaseSnapshot,
-  GlobalStats,
-  BigDecimal,
-} from "generated";
+import { indexer, CreatureBoringFactory, CreatureBoringToken, Monster, Trade, Trader, MarketCapSnapshot, TotalVolumeTradedSnapshot, CurrentHoldings, WhitelistPurchaseSnapshot, GlobalStats, BigDecimal } from "envio";
 
 import { createOrUpdateHoldingsTransfer, updateHoldingsTrade } from "./helpers/Holdings";
 
@@ -20,7 +8,9 @@ import { createGlobalStats, updateGlobalStats, globalStatsId } from "./helpers/G
 
 import { WIN_POINTS_MULTIPLIER, TRADE_POINTS_MULTIPLIER, MONSTER_XP_MULTIPLIER } from "./constants";
 
-CreatureBoringToken.OwnershipTransferred.handler(async ({ event, context }) => {
+indexer.onEvent(
+  { contract: "CreatureBoringToken", event: "OwnershipTransferred" },
+  async ({ event, context }) => {
   const { newOwner } = event.params;
   const { srcAddress } = event
   
@@ -32,13 +22,19 @@ CreatureBoringToken.OwnershipTransferred.handler(async ({ event, context }) => {
     await updateMonster(context, monster, {contractOwner: newOwner})    
   }
   
-})
+}
+)
 
-CreatureBoringFactory.TokenCreated.contractRegister(({event, context}) => {
-  context.addCreatureBoringToken(event.params.tokenAddress)
-}, {preRegisterDynamicContracts: true});
+indexer.contractRegister(
+  { contract: "CreatureBoringFactory", event: "TokenCreated" },
+  async ({event, context}) => {
+  context.chain.CreatureBoringToken.add(event.params.tokenAddress)
+}
+);
 
-CreatureBoringFactory.TokenCreated.handler(async ({event, context}) =>{
+indexer.onEvent(
+  { contract: "CreatureBoringFactory", event: "TokenCreated" },
+  async ({event, context}) =>{
   const { tokenAddress, name, symbol } = event.params;  
   
   const monster = await context.Monster.get(tokenAddress);
@@ -49,10 +45,12 @@ CreatureBoringFactory.TokenCreated.handler(async ({event, context}) =>{
     context.log.warn("Since Ownership Transferred is emitted before ERC20Initialized, this case should be impossible")
     await createMonster(context, tokenAddress, {name, symbol})
   }
-})
+}
+)
 
-
-CreatureBoringToken.Paused.handler(async ({ event, context }) => {  
+indexer.onEvent(
+  { contract: "CreatureBoringToken", event: "Paused" },
+  async ({ event, context }) => {  
   const { srcAddress } = event
   
   let monster: Monster | undefined = await context.Monster.get(srcAddress);
@@ -62,9 +60,12 @@ CreatureBoringToken.Paused.handler(async ({ event, context }) => {
   } else {
     context.log.error("Paused event emitted for a non existent monster")
   }  
-})
+}
+)
 
-CreatureBoringToken.Unpaused.handler(async ({ event, context }) => {  
+indexer.onEvent(
+  { contract: "CreatureBoringToken", event: "Unpaused" },
+  async ({ event, context }) => {  
   const { srcAddress } = event
 
   let monster: Monster | undefined = await context.Monster.get(srcAddress);
@@ -74,9 +75,12 @@ CreatureBoringToken.Unpaused.handler(async ({ event, context }) => {
   } else {
     context.log.error("Unpaused event emitted for a non existent monster")
   }  
-})
+}
+)
 
-CreatureBoringToken.Transfer.handler(async ({ event, context }) => {
+indexer.onEvent(
+  { contract: "CreatureBoringToken", event: "Transfer" },
+  async ({ event, context }) => {
   const { from, to, value } = event.params;  
   const { hash } = event.transaction
   const { logIndex, srcAddress } = event
@@ -138,9 +142,12 @@ CreatureBoringToken.Transfer.handler(async ({ event, context }) => {
   // update the current holding for the to address
   await createOrUpdateHoldingsTransfer(context, monster, to, value, monster.price, hash, logIndex, srcAddress, timestamp);
 
-})
+}
+)
 
-CreatureBoringToken.Trade.handler(async ({ event, context }) => {   
+indexer.onEvent(
+  { contract: "CreatureBoringToken", event: "Trade" },
+  async ({ event, context }) => {   
   const { trader, isBuy,  amount, ethAmount, protocolFee } = event.params 
   const { hash } = event.transaction
   const { srcAddress, logIndex } = event
@@ -217,7 +224,6 @@ CreatureBoringToken.Trade.handler(async ({ event, context }) => {
     context.Trade.set(trade);    
   }
 
-
   let traderEntity: Trader | undefined = await context.Trader.get(trader);
   if (!traderEntity) {
     traderEntity = {
@@ -258,10 +264,13 @@ CreatureBoringToken.Trade.handler(async ({ event, context }) => {
   // update the current holding for the trader
   await updateHoldingsTrade(context, monster, trader, isBuy ? amount : -amount, monster.price, hash, logIndex, srcAddress, timestamp);
   
-});
+}
+);
 
 // PriceUpdate(uint256 newPrice, uint256 tokenSupply, uint256 curveMultiplierValue)
-CreatureBoringToken.PriceUpdate.handler(async ({event, context}) => {
+indexer.onEvent(
+  { contract: "CreatureBoringToken", event: "PriceUpdate" },
+  async ({event, context}) => {
   const { newPrice, tokenSupply } = event.params
   const { hash } = event.transaction
   const { timestamp } = event.block
@@ -280,9 +289,12 @@ CreatureBoringToken.PriceUpdate.handler(async ({event, context}) => {
   } else {
     context.log.warn(`Trying to update price on non existent monster: ${srcAddress}`)  
   }
-})
+}
+)
 
-CreatureBoringToken.BattleStarted.handler(async ({ event, context }) => {
+indexer.onEvent(
+  { contract: "CreatureBoringToken", event: "BattleStarted" },
+  async ({ event, context }) => {
   const { opponent } = event.params;
   const { srcAddress } = event  
 
@@ -299,10 +311,13 @@ CreatureBoringToken.BattleStarted.handler(async ({ event, context }) => {
     context.Monster.set(monster);
   }
 
-})
+}
+)
 
-CreatureBoringToken.BattleEnded.handlerWithLoader({
-  loader: async ({ event, context }) => { 
+indexer.onEvent(
+  { contract: "CreatureBoringToken", event: "BattleEnded" },
+  async ({ event, context }) => {
+    const loaderReturn = await (async ({ event, context }) => { 
     const { winner } = event.params;
     const { srcAddress } = event
     const isWin = winner == srcAddress;
@@ -316,59 +331,59 @@ CreatureBoringToken.BattleEnded.handlerWithLoader({
     }
 
     return { allCurrentHoldings };
-  },
-  handler: async ({ event, context, loaderReturn }) => {
-    const { winner, loser, transferredValue } = event.params;
-    const { srcAddress, logIndex } = event
-    const { hash } = event.transaction
-    const { timestamp } = event.block
-    const  { allCurrentHoldings } = loaderReturn;
+  })({ event, context });
 
-    const isWin = winner == srcAddress;
+        const { winner, loser, transferredValue } = event.params;
+        const { srcAddress, logIndex } = event
+        const { hash } = event.transaction
+        const { timestamp } = event.block
+        const  { allCurrentHoldings } = loaderReturn;
 
-    if (isWin) {
-      allCurrentHoldings.forEach(async (currentHoldings) => {        
-        let trader = await context.Trader.get(currentHoldings.trader);
-        if (!trader) {
-          context.log.error("Trader has holdings but is not in the database")
-          return;
-        }
-        const additionalPoints = new BigDecimal(WIN_POINTS_MULTIPLIER).multipliedBy(new BigDecimal(currentHoldings.balance.toString()));
-        trader = {
-          ...trader,
-          points: trader.points + BigInt(additionalPoints.integerValue().toString()),
-        }
+        const isWin = winner == srcAddress;
+
+        if (isWin) {
+          allCurrentHoldings.forEach(async (currentHoldings) => {        
+            let trader = await context.Trader.get(currentHoldings.trader);
+            if (!trader) {
+              context.log.error("Trader has holdings but is not in the database")
+              return;
+            }
+            const additionalPoints = new BigDecimal(WIN_POINTS_MULTIPLIER).multipliedBy(new BigDecimal(currentHoldings.balance.toString()));
+            trader = {
+              ...trader,
+              points: trader.points + BigInt(additionalPoints.integerValue().toString()),
+            }
         
-        context.Trader.set(trader);
-      })
-    }
+            context.Trader.set(trader);
+          })
+        }
 
-    let monster = await context.Monster.get(srcAddress);
-    if (!monster) {
-      context.log.error("Battle ended on a non existent monster") 
-    } else {
-      const newTotalWinsCount = monster.totalWinsCount + (isWin ? 1 : 0);
-      const newTotalLossesCount = monster.totalLossesCount + (!isWin ? 1 : 0);
-      const newWinLoseRatio = newTotalWinsCount / (newTotalWinsCount + newTotalLossesCount);
+        let monster = await context.Monster.get(srcAddress);
+        if (!monster) {
+          context.log.error("Battle ended on a non existent monster") 
+        } else {
+          const newTotalWinsCount = monster.totalWinsCount + (isWin ? 1 : 0);
+          const newTotalLossesCount = monster.totalLossesCount + (!isWin ? 1 : 0);
+          const newWinLoseRatio = newTotalWinsCount / (newTotalWinsCount + newTotalLossesCount);
 
-      monster = {
-        ...monster,
-        totalWinsCount: newTotalWinsCount,
-        totalLossesCount: newTotalLossesCount,
-        winLoseRatio: newWinLoseRatio,
-        isInBattle: false,
-        activeOpponent: undefined,
-      }    
-      context.Monster.set(monster);
-    }
+          monster = {
+            ...monster,
+            totalWinsCount: newTotalWinsCount,
+            totalLossesCount: newTotalLossesCount,
+            winLoseRatio: newWinLoseRatio,
+            isInBattle: false,
+            activeOpponent: undefined,
+          }    
+          context.Monster.set(monster);
+        }
 
-    context.BattleOutcome.set({
-      id: hash + "-" + logIndex,
-      monster: srcAddress,
-      win: isWin,
-      timestamp: BigInt(timestamp),
-      opponent: isWin ? loser : winner,
-      transferredValue: transferredValue,
-    })
+        context.BattleOutcome.set({
+          id: hash + "-" + logIndex,
+          monster: srcAddress,
+          win: isWin,
+          timestamp: BigInt(timestamp),
+          opponent: isWin ? loser : winner,
+          transferredValue: transferredValue,
+        })
   }
-})
+)

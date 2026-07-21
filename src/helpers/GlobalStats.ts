@@ -1,4 +1,4 @@
-import { handlerContext, GlobalStats } from "generated";
+import { EvmOnEventContext, GlobalStats } from "envio";
 
 export const globalStatsId = "global";
 
@@ -8,7 +8,7 @@ export const defaultGlobalStats: GlobalStats = {
 }
 
 export const createGlobalStats = async (
-    context: handlerContext,    
+    context: EvmOnEventContext,    
     overrides?: Partial<GlobalStats>
   ) => {  
     const globalStats: GlobalStats = {      
@@ -19,7 +19,7 @@ export const createGlobalStats = async (
   }
 
 export const updateGlobalStats = async (
-    context: handlerContext,
+    context: EvmOnEventContext,
     globalStats: GlobalStats,
     overrides?: Partial<GlobalStats>
   ) => {         
@@ -29,7 +29,7 @@ export const updateGlobalStats = async (
       });
   } 
 
-export const createOrUpdateGlobalStats = async (context: handlerContext, overrides?: Partial<GlobalStats>) => {
+export const createOrUpdateGlobalStats = async (context: EvmOnEventContext, overrides?: Partial<GlobalStats>) => {
   let globalStats: GlobalStats | undefined = await context.GlobalStats.get(globalStatsId);
   if (globalStats) {
     await updateGlobalStats(context, globalStats, overrides);
