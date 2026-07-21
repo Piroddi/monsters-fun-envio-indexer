@@ -1,6 +1,6 @@
 # yaml-language-server: $schema=./node_modules/envio/evm.schema.json
 name: monsters.fun
-networks:
+chains:
 - id: 11124
   start_block: 8963740
   rpc: https://api.testnet.abs.xyz  

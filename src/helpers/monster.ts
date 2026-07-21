@@ -1,7 +1,7 @@
-import { handlerContext, Monster, BigDecimal } from "generated";
+import { EvmOnEventContext, Monster, BigDecimal } from "envio";
 
 export const createMonster = async (
-    context: handlerContext,
+    context: EvmOnEventContext,
     id: string,
     overrides?: Partial<Monster>
   ) => {  
@@ -29,7 +29,7 @@ export const createMonster = async (
   }
 
 export const updateMonster = async (
-    context: handlerContext,
+    context: EvmOnEventContext,
     monster: Monster,
     overrides?: Partial<Monster>
   ) => {         
@@ -39,7 +39,7 @@ export const updateMonster = async (
       });
   } 
 
-export const requireMonster = async (context: handlerContext, id: string, msg: string) => {
+export const requireMonster = async (context: EvmOnEventContext, id: string, msg: string) => {
     let monster: Monster | undefined = await context.Monster.get(id);
     if (!monster) {
         context.log.error(msg)    

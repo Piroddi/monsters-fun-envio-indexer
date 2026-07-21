@@ -1,7 +1,7 @@
-import { handlerContext, CurrentHoldings, Monster, BigDecimal } from "generated";
+import { EvmOnEventContext, CurrentHoldings, Monster, BigDecimal } from "envio";
 import { ZERO_ADDRESS } from "../constants";
 
-export const createOrUpdateHoldingsTransfer = async (context: handlerContext, monster: Monster, trader: string, balance: bigint, price: BigDecimal, hash: string, logIndex: number, srcAddress: string, blockTimestamp: number) => {
+export const createOrUpdateHoldingsTransfer = async (context: EvmOnEventContext, monster: Monster, trader: string, balance: bigint, price: BigDecimal, hash: string, logIndex: number, srcAddress: string, blockTimestamp: number) => {
 
   let holding: CurrentHoldings | undefined = await context.CurrentHoldings.get(monster.id + "-" + trader);
   
@@ -49,7 +49,7 @@ export const createOrUpdateHoldingsTransfer = async (context: handlerContext, mo
   
 }
 
-export const updateHoldingsTrade = async (context: handlerContext, monster: Monster, trader: string, balance: bigint, price: BigDecimal, hash: string, logIndex: number, srcAddress: string, blockTimestamp: number) => {  
+export const updateHoldingsTrade = async (context: EvmOnEventContext, monster: Monster, trader: string, balance: bigint, price: BigDecimal, hash: string, logIndex: number, srcAddress: string, blockTimestamp: number) => {  
   let holding: CurrentHoldings | undefined = await context.CurrentHoldings.get(monster.id + "-" + trader);
   
   if (!holding) {
